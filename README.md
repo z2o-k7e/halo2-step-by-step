@@ -16,6 +16,11 @@ Homepage: **https://learn.z2o-k7e.world**
 | [💡I've got an idea!](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/i-ve-got-an-idea) | Amazing fancy ideas !|
 | [🙌 Show and tell](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/show-and-tell) | Amazing fancy ideas !|
 
+------
+
+<img width="636" alt="image" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/837ca4d9-697b-4e8b-ba0a-ea8b62313d86">
+
+
 
 ### How to contribute?
 - issue
@@ -31,6 +36,10 @@ Homepage: **https://learn.z2o-k7e.world**
   - Explain the core concepts within halo2 with clear documentation and diagrams.
 - Hands-On Approach to Building zkp Applications with halo2
   - Endeavor to provide a truly hands-on explanation of how to build zkp applications using halo2.
+
+### Branch learning group
+- **zkVM** @Po , weekly Meeting ~
+- **zkEmail**  @Demian @白菜 , weekly Meeting 
 
 
 **useful learning resources:**
