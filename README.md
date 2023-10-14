@@ -1,6 +1,6 @@
-# halo2-step-by-step
+### Halo2-Step-By-Step
 
-https://learn.z2o-k7e.world
+Homepage: <h3>https://learn.z2o-k7e.world</h3>
 
 
 ### [Github Discussion](https://github.com/zkp-co-learning/halo2-step-by-step/discussions) Usage
