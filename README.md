@@ -36,6 +36,7 @@ Homepage: **https://learn.z2o-k7e.world**
 **useful learning resources:**
 - https://halo2.club
 - awosome-halo2
+- [halo2-materials](https://learn.z2o-k7e.world/halo2/wait%20todo/Learning-Process.html)
 
 
 colearning community
