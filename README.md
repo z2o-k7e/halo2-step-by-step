@@ -39,7 +39,7 @@ Homepage: **https://learn.z2o-k7e.world**
 
 ### Branch learning group
 - **zkVM** @Po , weekly Meeting ~
-- **zkEmail**  @Demian @白菜 , weekly Meeting 
+- **zkEmail**  @Demian @白菜 @郭宇@Secbit , weekly Meeting 
 
 
 **useful learning resources:**
