@@ -15,6 +15,8 @@ Homepage: **https://learn.z2o-k7e.world**
 | [🔧Tricks & Tools](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/tricks-tools)    | fancy tricks & tools |
 | [💡I've got an idea!](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/i-ve-got-an-idea) | Amazing fancy ideas !|
 | [🙌 Show and tell](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/show-and-tell) | Amazing fancy ideas !|
+| [👪 co-learning IRL!](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/co-learning-irl) | 
+co-learning in real life ~ |
 
 ------
 
