@@ -1,10 +1,9 @@
 ### Halo2-Step-By-Step
 
-Homepage: <h3>https://learn.z2o-k7e.world</h3>
+Homepage: **https://learn.z2o-k7e.world**
 
 
-### [Github Discussion](https://github.com/zkp-co-learning/halo2-step-by-step/discussions) Usage
-
+#### [Github Discussion](https://github.com/zkp-co-learning/halo2-step-by-step/discussions) Usage
 
 
 | Categories         | description                                                  |
@@ -13,4 +12,5 @@ Homepage: <h3>https://learn.z2o-k7e.world</h3>
 | [🙏 Q&A](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/q-a)              | Question & Answer , you are the most helpful! |
 | [🔧Tricks & Tools](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/tricks-tools)    | fancy tricks & tools |
 | [💡I've got an idea!](https://github.com/zkp-co-learning/halo2-step-by-step/discussions/categories/i-ve-got-an-idea) | Amazing fancy ideas !|
+
 
