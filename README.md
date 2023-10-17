@@ -4,6 +4,9 @@ Homepage: **https://learn.z2o-k7e.world**
 
 -------
 
+Currently @Po and @Demian are building a **new beginner-friendly halo2 tutorial** and **halo2 code digging exercise**, please stay tuned...
+
+
 
 #### [Github Discussion](https://github.com/zkp-co-learning/halo2-step-by-step/discussions) Usage
 
