@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use ff::{Field, PrimeField};
+use ff:: PrimeField;
 use halo2_proofs::{circuit::*, plonk::*, poly::Rotation};
 
 #[derive(Debug, Clone)]
@@ -48,8 +48,8 @@ impl<F: PrimeField> FiboChip<F> {
 
             // Query a selector at the current position.
             let s = meta.query_selector(selector);
-            // if Rotation::next`  means  `ωx`, 这 3 列都在同一行, 所以都是 Rotation::cur()
-            // 除了 Rotation::cur() 之外, 还有 Rotation::prev 和 Rotation::next 
+            // if Rotation::next` means `ωx`, 这 3 列都在同一行, 所以都是 Rotation::cur()
+            // 除了 Rotation::cur() 之外, 还有 Rotation::prev 和 Rotation::next
             let a = meta.query_advice(col_a, Rotation::cur());
             let b = meta.query_advice(col_b, Rotation::cur());
             let c = meta.query_advice(col_c, Rotation::cur());
@@ -171,10 +171,6 @@ impl<F: PrimeField> Circuit<F> for MyCircuit<F> {
         let (_, mut prev_b, mut prev_c) =
             chip.assign_first_row(layouter.namespace(|| "first row"))?;
         
-        // 这是干啥??
-        // chip.expose_public(layouter.namespace(|| "private a"), &prev_a, 0)?;
-        // chip.expose_public(layouter.namespace(|| "private b"), &prev_b, 1)?;
-
         for _i in 3..10 {
             let c_cell = chip.assign_row(layouter.namespace(|| "next row"), &prev_b, &prev_c)?;
             prev_b = prev_c;
@@ -190,7 +186,7 @@ impl<F: PrimeField> Circuit<F> for MyCircuit<F> {
 #[cfg(test)]
 mod tests {
     use super::MyCircuit;
-    use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
+    use halo2_proofs::{dev::MockProver, pasta::Fp};
     use std::marker::PhantomData;
 
     #[test]
@@ -208,7 +204,7 @@ mod tests {
         let prover = MockProver::run(k, &circuit, vec![public_input.clone()]).unwrap();
         prover.assert_satisfied();
 
-        public_input[2] += Fp::one(); // out += 2  =>  unsatisfied
+        public_input[2] += Fp::one();  // out += 2  =>  unsatisfied
         let _prover = MockProver::run(k, &circuit, vec![public_input]).unwrap();
         // uncomment the following line and the assert will fail
         // _prover.assert_satisfied();
