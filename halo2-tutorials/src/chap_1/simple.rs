@@ -44,7 +44,7 @@ fn load_private<F:Field>(
     value: Value<F>) -> Result<Number<F>, Error> {
     layouter.assign_region(
         || "load private", 
-    |mut region| {
+        |mut region| {
         region.assign_advice(
             || "private input", 
             config.advice[0], 
