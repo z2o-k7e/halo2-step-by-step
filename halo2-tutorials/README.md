@@ -1,6 +1,6 @@
 ### Intro
 
-🎉 Hey there, code warrior! 🎉 Ready for some `halo2` code fill-in-the-blanks <del>exercise</del> fun? This challenge is whipped up specially for you to get all cozy and chummy with **`halo2`** and **Rust**!
+🎉 Hey there, code warrior! 🎉 Ready for some `halo2` code fill-in-the-blanks <del>exercise</del> fun? This challenge is specially for you to learn **`halo2`** and **Rust**!
 
 ### What's the Deal?
 
