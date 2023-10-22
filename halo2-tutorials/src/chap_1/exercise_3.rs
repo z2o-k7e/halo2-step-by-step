@@ -130,6 +130,7 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
       }
   }
 
+  #[]
   fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
       let a = _________;
       let b = _________;
