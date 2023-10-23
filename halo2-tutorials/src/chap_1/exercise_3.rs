@@ -1,5 +1,5 @@
 /// Prove know  prove knowledge of two private inputs a and b
-/// s.t: a^2 * b^2 * const = out
+/// s.t: a^2 * b^2 * c = out
 
 use halo2_proofs::{
   arithmetic::Field,
@@ -13,12 +13,12 @@ use halo2_proofs::{
 /// |-------|-------|-------|-------|
 /// | out   |    a  |       |       |
 /// |       |    b  |       |       |
-/// |       | const |       |       |
+/// |       |    c  |       |       |
 /// |       |   ab  |   b   |   1   |
 /// |       |   ab  |       |   0   |
 /// |       |   ab  |   ab  |   1   |
 /// |       | absq  |       |   0   |
-/// |       |  absq | const |   1   |
+/// |       |  absq |   c   |   1   |
 /// |       |  out  |       |   0   |
 
 #[derive(Debug, Clone)]
@@ -33,7 +33,7 @@ struct Number<F:Field>(AssignedCell<F,F>);
 
 #[derive(Default)]
 struct MyCircuit<F:Field> {
-  constant: F,
+  c: F,
   a: Value<F>,
   b: Value<F>
 }
@@ -57,7 +57,7 @@ fn load_private<F:Field>(
 fn load_constant<F:Field>( 
   config: &CircuitConfig,
   mut layouter: impl Layouter<F>,
-  constant: F
+  c: F
 ) -> Result<Number<F>, Error> {
   layouter.assign_region(
       || "load private", 
@@ -66,7 +66,7 @@ fn load_constant<F:Field>(
           || "private input", 
           config.advice[0], 
           0, 
-          constant
+          c
       ).map(Number)
   })
 }
@@ -101,10 +101,9 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
   fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
       let advice = [meta.advice_column(),meta.advice_column()];
       let instance = meta.instance_column();
-      let constant = meta.fixed_column();
 
       meta.enable_equality(instance);
-      meta.enable_constant(constant);
+
       for c in &advice {
           meta.enable_equality(*c);
       }
@@ -134,14 +133,14 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
   fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
       let a = _________;
       let b = _________;
-      let constant = load_constant(&config,layouter.namespace(|| "load constant"), self.constant)?;
+      let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
 
       let ab = ________;
       let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
-      let c = mul(&config, layouter.namespace(|| "absq*constant"), absq, constant)?;
+      let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
 
       //expose public
-      layouter.namespace(|| "expose c").constrain_instance(c.0.cell(), config.instance, 0)
+      layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
   }
 }
 
@@ -159,15 +158,15 @@ mod tests {
       let k = 5;
   
       // Prepare the private and public inputs to the circuit!
-      let constant = Fp::from(2);
+      let c = Fp::from(2);
       let a = Fp::from(2);
       let b = Fp::from(3);
-      let c = constant * a.square() * b.square();
-      println!("c=:{:?}",c);
+      let out = c * a.square() * b.square();
+      println!("out=:{:?}",out);
   
       // Instantiate the circuit with the private inputs.
       let circuit = MyCircuit {
-          constant,
+          c,
           a: Value::known(a),
           b: Value::known(b),
       };

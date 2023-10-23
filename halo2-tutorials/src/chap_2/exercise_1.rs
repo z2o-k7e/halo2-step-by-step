@@ -1,9 +1,9 @@
 /// chap2: custom gates
-/// Prove know knowledge of three private inputs a , b, const
+/// Prove knowing knowledge of three private inputs a , b, c
 /// s.t: 
-///     const * a^2 * b^2 = c
-///     d = c + const
-///     out = d^3
+///     d = a^2 * b^2 * c
+///     e = c + d
+///     out = e^3
 
 use halo2_proofs::{
     arithmetic::Field,
@@ -17,16 +17,16 @@ use halo2_proofs::{
 // / |  out  |-------|-------|-------|-------|-------|
 // / |       |    a  |       |       |       |       |
 // / |       |    b  |       |       |       |       |
-// / |       | const |       |       |       |       |
+// / |       |   c  |        |       |       |       |
 // / |       |   a  |   b   |   1   |   0   |   0   |
 // / |       |   ab  |       |   0   |   0   |   0   |
 // / |       |   ab  |   ab  |   1   |   0   |   0   |
 // / |       | absq  |       |   0   |   0   |   0   |
-// / |       |  absq | const |   1   |   0   |   0   |
-// / |       |  c    |       |   0   |   0   |   0   |
-// / |       |  c    | const |   0   |   1   |   0   |
+// / |       |  absq |   c   |   1   |   0   |   0   |
 // / |       |  d    |       |   0   |   0   |   0   |
-// / |       |  d    |  out  |   0   |   0   |   1   |
+// / |       |  c    |  d    |   0   |   1   |   0   |
+// / |       |  e    |       |   0   |   0   |   0   |
+// / |       |  e    |  out  |   0   |   0   |   1   |
 
 
 #[derive(Debug, Clone)]
@@ -43,7 +43,7 @@ struct Number<F:Field>(AssignedCell<F,F>);
 
 #[derive(Default)]
 struct MyCircuit<F:Field> {
-    constant: F,
+    c: F,
     a: Value<F>,
     b: Value<F>
 }
@@ -67,7 +67,7 @@ fn load_private<F:Field>(
 fn load_constant<F:Field>( 
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
-    constant: F
+    c: F
 ) -> Result<Number<F>, Error> {
     layouter.assign_region(
         || "load private", 
@@ -76,7 +76,7 @@ fn load_constant<F:Field>(
             || "private input", 
             config.advice[0], 
             0, 
-            constant
+            c
         ).map(Number)
     })
 }
@@ -192,15 +192,15 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
     fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
         let a = load_private(&config,layouter.namespace(|| "load a"), self.a)?;
         let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
-        let constant = load_constant(&config,layouter.namespace(|| "load constant"), self.constant)?;
+        let c = load_constant(&config,layouter.namespace(|| "load constant"), self.c)?;
 
 
         let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
         let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
-        let c = mul(&config, layouter.namespace(|| "absq*constant"), absq, constant.clone())?;
+        let d = mul(&config, layouter.namespace(|| "absq*c"), absq, c.clone())?;
 
-        let d = add(&config, layouter.namespace(|| "absq + constant"), c, constant)?;
-        let out = cub(&config, layouter.namespace(|| "absq^3"), d)?;
+        let e = add(&config, layouter.namespace(|| "absq + c"), d, c)?;
+        let out = cub(&config, layouter.namespace(|| "e^3"), e)?;
 
         //expose public
         layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
@@ -216,19 +216,19 @@ mod tests {
 
     fn circuit() -> (MyCircuit<Fp>, Fp) {
         // Prepare the private and public inputs to the circuit!
-        let constant = Fp::from(2);
+        let c = Fp::from(2);
         let a = Fp::from(2);
         let b = Fp::from(3);
-        let c = constant * a.square() * b.square() + constant;
-        let c = c.cube();
-        println!("c=:{:?}",c);
+        let e = c * a.square() * b.square() + c;
+        let out = e.cube();
+        println!("out=:{:?}",out);
     
         // Instantiate the circuit with the private inputs.
         (MyCircuit {
-            constant,
+            c,
             a: Value::known(a),
             b: Value::known(b),
-        }, c)
+        }, out)
     }
     #[test]
     fn test_simple_3gates() {
@@ -236,11 +236,11 @@ mod tests {
         // The number of rows in our circuit cannot exceed 2^k. Since our example
         // circuit is very small, we can pick a very small value here.
         let k = 5;
-        let (circuit, c) = circuit();
+        let (circuit, out) = circuit();
     
         // Arrange the public input. We expose the multiplication result in row 0
         // of the instance column, so we position it there in our public inputs.
-        let mut public_inputs = vec![c];
+        let mut public_inputs = vec![out];
     
         // Given the correct public input, our circuit will verify.
         let prover = MockProver::run(k, &circuit, vec![public_inputs.clone()]).unwrap();

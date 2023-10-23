@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
 /// chap2: chip
-/// Prove know knowledge of three private inputs a , b, const
+/// Prove knowing knowledge of three private inputs a, b, c
 /// s.t: 
-///     const*a^2 * b^2 = c
-///     d = c + const
-///     out = d^3
+///     d = a^2 * b^2 * c
+///     e = c + d
+///     out = e^3
 
 use halo2_proofs::{
     arithmetic::Field,
@@ -19,12 +19,12 @@ use halo2_proofs::{
 // / |  out  |-------|-------|-------|-------|-------|
 // / |       |    a  |       |       |       |       |
 // / |       |    b  |       |       |       |       |
-// / |       | const |       |       |       |       |
+// / |       |    c  |       |       |       |       |
 // / |       |   a   |   b   |   1   |   0   |   0   |
 // / |       |   ab  |   ab  |   1   |   0   |   0   |
-// / |       | absq  | const |   1   |   0   |   0   |
-// / |       |  c    | const |   0   |   1   |   0   |
-// / |       |  d    |   out |   0   |   0   |   1   |
+// / |       | absq  |   c   |   1   |   0   |   0   |
+// / |       |  d    |   c   |   0   |   1   |   0   |
+// / |       |  e    |   out |   0   |   0   |   1   |
 
 
 #[derive(Debug, Clone)]
@@ -100,14 +100,14 @@ impl <F:Field> SimpleChip<F> {
         mut layouter: impl Layouter<F>,
         a: Value<F>,
         b: Value<F>,
-        constant: F
+        c: F
         ) -> Result<Number<F>, Error> {
             let cells = layouter.assign_region(
                 || "load private", 
             |mut region| {
                 let a_cell = region.assign_advice(|| "private input a",  self.config.advice[0], 0, || a).map(Number)?;
                 let b_cell = region.assign_advice(|| "private input b",  self.config.advice[0], 1, || b).map(Number)?;
-                let c_cell = region.assign_advice_from_constant(|| "private input constant",  self.config.advice[0], 2, constant).map(Number)?;
+                let c_cell = region.assign_advice_from_constant(|| "private input c",  self.config.advice[0], 2, c).map(Number)?;
                 Ok((a_cell,b_cell, c_cell))
             }).unwrap();
 
@@ -115,7 +115,7 @@ impl <F:Field> SimpleChip<F> {
                 let config = &self.config;
                 let mut offset = 0;
                 //load a,b
-                let (a,b, constant) = &cells;
+                let (a,b, c) = &cells;
                 config.s_mul.enable(&mut region, offset)?;
                 let a = a.0.copy_advice(|| "lhs", &mut region, self.config.advice[0], offset).map(Number)?;
                 let b = b.0.copy_advice(|| "rhs", &mut region, self.config.advice[1], offset).map(Number)?;
@@ -125,26 +125,26 @@ impl <F:Field> SimpleChip<F> {
                 let value = a.0.value().copied() * b.0.value().copied();
                 let ab_0 = region.assign_advice(|| "ab lhs", config.advice[0], offset, || value).map(Number)?;
                 let ab_1 = ab_0.0.copy_advice(|| "ab rhs", &mut region, self.config.advice[1], offset).map(Number)?;
-                //fill absq,constant
+                //fill absq,c
                 offset += 1;
                 config.s_mul.enable(&mut region, offset)?;
                 let value = ab_0.0.value().copied() * ab_1.0.value().copied();
                 let absq =  region.assign_advice(|| "absq", config.advice[0], offset, || value).map(Number)?;
-                let constant = constant.0.copy_advice(|| "const", &mut region, self.config.advice[1], offset).map(Number)?;
-                //fill c, const
+                let c = c.0.copy_advice(|| "c", &mut region, self.config.advice[1], offset).map(Number)?;
+                //fill c, d
                 offset += 1;
                 config.s_add.enable(&mut region, offset)?;
-                let value = absq.0.value().copied() * constant.0.value().copied();
-                let c =  region.assign_advice(|| "", config.advice[0], offset, || value).map(Number)?;
-                let constant = constant.0.copy_advice(|| "lhs", &mut region, self.config.advice[1], offset).map(Number)?;
-                // fill d
+                let value = absq.0.value().copied() * c.0.value().copied();
+                let d =  region.assign_advice(|| "d", config.advice[0], offset, || value).map(Number)?;
+                let c = c.0.copy_advice(|| "c", &mut region, self.config.advice[1], offset).map(Number)?;
+                // fill e
                 offset += 1;
-                let value = c.0.value().copied() + constant.0.value().copied();
-                let d = region.assign_advice(|| "", config.advice[0], offset, || value).map(Number)?;
+                let value = d.0.value().copied() + c.0.value().copied();
+                let e = region.assign_advice(|| "e", config.advice[0], offset, || value).map(Number)?;
                 //fill out
                 config.s_cub.enable(&mut region, offset)?;
-                let value = d.0.value().copied() * d.0.value().copied() * d.0.value().copied();
-                region.assign_advice(|| "", config.advice[1], offset, || value).map(Number)
+                let value = e.0.value().copied() * e.0.value().copied() * e.0.value().copied();
+                region.assign_advice(|| "out", config.advice[1], offset, || value).map(Number)
             })
     }
 
@@ -160,7 +160,7 @@ impl <F:Field> SimpleChip<F> {
 
 #[derive(Default)]
 struct MyCircuit<F:Field> {
-    constant: F,
+    c: F,
     a: Value<F>,
     b: Value<F>
 }
@@ -180,7 +180,7 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
     fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
         //assign witness
         let chip = SimpleChip::construct(config);
-        let out = chip.assign(layouter.namespace(|| "simple ship"), self.a, self.b, self.constant)?;
+        let out = chip.assign(layouter.namespace(|| "simple ship"), self.a, self.b, self.c)?;
         //expose public
         chip.expose_public(layouter, out, 0)
     }
@@ -195,19 +195,19 @@ mod tests {
 
     fn circuit() -> (MyCircuit<Fp>, Fp) {
         // Prepare the private and public inputs to the circuit!
-        let constant = Fp::from(2);
+        let c = Fp::from(2);
         let a = Fp::from(2);
         let b = Fp::from(3);
-        let c = constant * a.square() * b.square() + constant;
-        let c = c.cube();
-        println!("c=:{:?}",c);
+        let e = c * a.square() * b.square() + c;
+        let out = e.cube();
+        println!("out=:{:?}",out);
     
         // Instantiate the circuit with the private inputs.
         (MyCircuit {
-            constant,
+            c,
             a: Value::known(a),
             b: Value::known(b),
-        }, c)
+        }, out)
     }
     #[test]
     fn test_simple_ship() {
@@ -215,11 +215,11 @@ mod tests {
         // The number of rows in our circuit cannot exceed 2^k. Since our example
         // circuit is very small, we can pick a very small value here.
         let k = 5;
-        let (circuit, c) = circuit();
+        let (circuit, out) = circuit();
     
         // Arrange the public input. We expose the multiplication result in row 0
         // of the instance column, so we position it there in our public inputs.
-        let mut public_inputs = vec![c];
+        let mut public_inputs = vec![out];
     
         // Given the correct public input, our circuit will verify.
         let prover = MockProver::run(k, &circuit, vec![public_inputs.clone()]).unwrap();
