@@ -145,10 +145,13 @@ mod tests {
         let f0 = Fp::from(1);
         let f1 = Fp::from(1);
         let out = Fp::from(55);
-        let circuit = FiboCircuit{nrow:10,_marker: PhantomData};
+        let circuit = FiboCircuit {
+            nrow: 10, 
+            _marker: PhantomData
+        };
 
         let k = 4;
-        let public_inputs = vec![f0,f1,out];
+        let public_inputs = vec![f0, f1, out];
         let prover = MockProver::run(k,&circuit,vec![public_inputs.clone()]).unwrap();
         prover.assert_satisfied();
     }
@@ -157,7 +160,7 @@ mod tests {
     #[test]
     fn plot_fibo_circuit(){
         // Instantiate the circuit with the private inputs.
-        let circuit =  FiboCircuit::<Fp>{nrow:10,_marker: PhantomData};
+        let circuit =  FiboCircuit::<Fp>{nrow: 10, _marker: PhantomData};
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;

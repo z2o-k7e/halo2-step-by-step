@@ -120,8 +120,9 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
           let lhs = meta.query_advice(advice[0], Rotation::cur());
           let rhs = meta.query_advice(advice[1], Rotation::cur());
           let out = meta.query_advice(advice[0], Rotation::next());
-          // let s_mul = meta.query_selector(s_mul);
-          vec![ lhs*rhs - out]
+          let s_mul = meta.query_selector(s_mul);
+          
+          vec![s_mul * (lhs * rhs - out)]
       });
 
       CircuitConfig {
