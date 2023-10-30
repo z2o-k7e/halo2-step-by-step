@@ -1,5 +1,4 @@
-// I AM NOT DON
-
+// I AM NOT DONE
 
 
 #[cfg(test)]
@@ -125,12 +124,11 @@ mod tests {
           */
           meta.create_gate("mul_gate", |meta| {
             
-            let lhs = meta.query_advice(advice[0], Rotation::cur());
+              let lhs = meta.query_advice(advice[0], Rotation::cur());
               let rhs = meta.query_advice(advice[1], Rotation::cur());
               let out = meta.query_advice(advice[0], Rotation::next());
               let s_mul = meta.query_selector(s_mul);
-              // vec![(lhs * rhs - out)]
-              vec![ s_mul * (lhs * rhs - out)]
+              // vec![s_mul * (lhs * rhs - out)]
           });
           
           CircuitConfig {

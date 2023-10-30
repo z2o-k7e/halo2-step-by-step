@@ -49,6 +49,7 @@ pub struct Exercise {
     // The path to the file containing the exercise's source code
     pub test_mod: String,
     pub path: PathBuf,
+    pub feature: String,
     // The mode of the exercise (Test, Compile, or Clippy)
     pub mode: Mode,
     // The hint text associated with the exercise
@@ -109,18 +110,24 @@ impl Drop for FileHandle {
 impl Exercise {
     pub fn compile(&self) -> Result<CompiledExercise, ExerciseOutput> {
         let cmd = match self.mode {
-            Mode::Compile => Command::new("rustc")
-                .args([self.path.to_str().unwrap(), "-o", &temp_file()])
-                .args(RUSTC_COLOR_ARGS)
-                .args(RUSTC_EDITION_ARGS)
-                .args(RUSTC_NO_DEBUG_ARGS)
-                .output(),
+            Mode::Compile => {
+                // println!("Mode::Compile {:?}", Mode::Compile);
+                Command::new("rustc")
+                    .args([self.path.to_str().unwrap(), "-o", &temp_file()])
+                    .args(RUSTC_COLOR_ARGS)
+                    .args(RUSTC_EDITION_ARGS)
+                    .args(RUSTC_NO_DEBUG_ARGS)
+                    .output()
+            },
 
             Mode::Test => {
-              Command::new("cargo")
-              // .args(&["test", "--", "--nocapture", "chap_1::exercise_1::tests::test_chap_1"])
-              .args(&["test", "--", "--nocapture", self.test_mod.as_str()])
-              .output()
+                println!("self.test_mod.as_str() {:?}", self.test_mod.as_str());
+                Command::new("cargo")
+                // .args(&["test", "--", "--nocapture", "chap_1::exercise_1::tests::test_chap_1"])
+                .args(&["test", 
+                        "--features", self.feature.as_str(), 
+                        "--", "--nocapture", self.test_mod.as_str()])
+                .output()
             },
             // Mode::Test => {
             //   // println!("Mode::Test {:?}", Mode::Test);
@@ -266,6 +273,7 @@ mod test {
             mode: Mode::Compile,
             hint: String::from(""),
             test_mod: String::from(""),
+            feature: String::from(""),
         };
         let compiled = exercise.compile().unwrap();
         drop(compiled);
@@ -298,6 +306,7 @@ mod test {
             mode: Mode::Compile,
             hint: String::new(),
             test_mod: String::new(),
+            feature: String::from(""),
         };
 
         let state = exercise.state();
@@ -340,6 +349,7 @@ mod test {
             mode: Mode::Compile,
             hint: String::new(),
             test_mod: String::new(),
+            feature: String::from(""),
         };
 
         assert_eq!(exercise.state(), State::Done);
@@ -353,6 +363,7 @@ mod test {
             mode: Mode::Test,
             hint: String::new(),
             test_mod: String::new(),
+            feature: String::from(""),
         };
         // println!("test_exercise_with_outpu  exercise  {:?}", exercise);
         let out = exercise.compile().unwrap(); //.run().unwrap();

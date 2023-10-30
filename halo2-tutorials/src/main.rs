@@ -430,33 +430,77 @@ fn rustc_exists() -> bool {
         .unwrap_or(false)
 }
 
-const DEFAULT_OUT: &str = r#"Thanks for installing Rustlings!
+const DEFAULT_OUT: &str = r#"Thanks for coming to the z2o-k7e World to challenge yourself!
+                                 ._                                 
+                              ,-'_ `-.                              
+                              ::".^-. `.                            
+                              ||<    >. \                           
+                              |: _, _| \ \                          
+                              : .'| '|  ;\`.                        
+                              _\ .`  '  | \ \                       
+                            .' `\ *-'   ;  . \                      
+                           '\ `. `.    /\   . \                     
+                         _/  `. \  \  :  `.  `.;                    
+                       _/ \  \ `-._  /|  `  ._/                     
+                      / `. `. `.   /  :    ) \                      
+                      `;._.  \  _.'/   \ .' .';                     
+                      /     .'`._.* /    .-' (                      
+                    .'`._  /    ; .' .-'     ;                      
+                    ; `._.:     |(    ._   _.'|                     
+                    `._   ;     ; `.-'        |                     
+                     |   / .-'./ .'  \ .     /:                     
+                     |  +.'  \ `-.   .\ *--*' ;\                    
+                     ;.' `. \ `.    /` `.    /  .                   
+                    /.L-'\_: L__..-*     \   ".  \                  
+                   :/ / .' `' ;   `-.     `.   \  .                 
+                   / /_/     /              \   ;  \                
+              |  _/ /       /          \     `./    .               
+            `   .  ;       /    .'      `-.   ;      \              
+           --  /  /  --   ,    /           `"' \      .             
+          .   .  '       /   .'                 `.     \            
+             /  /    `  /   /                  |  `-.   .           
+        --  .  '   \   /                         `.  `-._\          
+       .   /  /       : `*.                    :   `.    `-.        
+          .  '    `   |    \                    \    `-._   `-._    
+     --  /  /   \     :     ;                    \              |   
+   .    .  '           ;                          `.  \      :  ;   
+       /  /   `       : \    \                      `. `._  /  /    
+  --  .  '  \         |  `.   `.                      `-. `'  /\    
+     /  .             ;         `-.              \       `-..'  ;   
+ `  .  '   `          |__                     |   `.         `-._.  
+_  :  /  \     [bug]    ;`-.                  :     `-.           ; 
+    `"  `               |   `.                 \       `*-.__.-*"' \
+' /  . \                ;_.  :`-._              `._                /
+                       /   `  . ; `"*-._                       _.-` 
+                     .'"'    _;  `-.__                     _.-`     
+                     `-.__.-"         `""---...___...--**"' |       
+                                                  `.____..--'
 
-Is this your first time? Don't worry, Rustlings was made for beginners! We are
-going to teach you a lot of things about Rust, but before we can get
-started, here's a couple of notes about how Rustlings operates:
+Is this your first time try to from `zero` to `hero`? 
 
-1. The central concept behind Rustlings is that you solve exercises. These
-   exercises usually have some sort of syntax error in them, which will cause
-   them to fail compilation or testing. Sometimes there's a logic error instead
-   of a syntax error. No matter what error, it's your job to find it and fix it!
-   You'll know when you fixed it because then, the exercise will compile and
-   Rustlings will be able to move on to the next exercise.
-2. If you run Rustlings in watch mode (which we recommend), it'll automatically
-   start with the first exercise. Don't get confused by an error message popping
-   up as soon as you run Rustlings! This is part of the exercise that you're
-   supposed to solve, so open the exercise file in an editor and start your
-   detective work!
+You know, In z2o-k7e World, There are always many things that hinder our journey.
+For example: bugs, rust syntax, confusion about not knowing how to practice, ...
+
+Don't worry,The halo2-tutorial was made for beginners! We are
+going to teach you a lot of things about Halo2, but before we can get
+started, here's a couple of notes about how to operates:
+
+1. The central concept behind halo2-tutorial is that you solve exercises. These
+    exercises usually have some sort of syntax error in them, which will cause
+    them to fail compilation or testing. Sometimes there's a logic error instead
+    of a syntax error. No matter what error, it's your job to find it and fix it!
+    You'll know when you fixed it because then, the exercise will compile and
+    it will be able to move on to the next exercise.
+2. If you run it in watch mode (which we recommend), it'll automatically
+    start with the first exercise. Don't get confused by an error message popping
+    up as soon as you run it! This is part of the exercise that you're
+    supposed to solve, so open the exercise file in an editor and start your
+    detective work!
 3. If you're stuck on an exercise, there is a helpful hint you can view by typing
-   'hint' (in watch mode), or running `rustlings hint exercise_name`.
+    'hint' (in watch mode)
 4. If an exercise doesn't make sense to you, feel free to open an issue on GitHub!
-   (https://github.com/rust-lang/rustlings/issues/new). We look at every issue,
-   and sometimes, other learners do too so you can help each other out!
-5. If you want to use `rust-analyzer` with exercises, which provides features like
-   autocompletion, run the command `rustlings lsp`.
-
-Got all that? Great! To get started, run `rustlings watch` in order to get the first
-exercise. Make sure to have your editor open!"#;
+    (https://github.com/zkp-co-learning/halo2-step-by-step/issues/new). We look at every issue,
+    and sometimes, other learners do too so you can help each other out!"#;
 
 const FENISH_LINE: &str = r"+----------------------------------------------------+
 |          You made it to the Fe-nish line!          |

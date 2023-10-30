@@ -1,4 +1,10 @@
 mod simple;
-mod exercise_1;
-mod exercise_2;
-mod exercise_3;
+
+#[cfg(feature = "chap_1_exercise_1")]
+pub mod exercise_1;
+
+#[cfg(feature = "chap_1_exercise_2")]
+pub mod exercise_2;
+
+#[cfg(feature = "chap_1_exercise_3")]
+pub mod exercise_3;
