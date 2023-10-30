@@ -1,5 +1,5 @@
 [package]
-name = "halo2-tutorials"
+name = "halo2_tutorials"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,3 +12,14 @@ dev-graph = ["halo2_proofs/dev-graph", "plotters", "plotters/bitmap_backend","pl
 halo2_proofs = { git = "https://github.com/zcash/halo2.git", version = "0.3"}
 plotters = { version = "0.3.0", default-features = true, optional = true }
 tabbycat = { version = "0.1", features = ["attributes"], optional = true }
+clap = { version = "4.4.0", features = ["derive"] }
+notify = "4.0"
+console = "0.15"
+toml = "0.7.6"
+regex = "1.5"
+serde = { version = "1.0", features = ["derive"] }
+indicatif = "0.17.6"
+
+[[bin]]
+name = "halo2_tutorials"
+path = "src/main.rs"
