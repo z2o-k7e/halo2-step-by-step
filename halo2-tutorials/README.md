@@ -1,6 +1,7 @@
+# Halo2-Tutorial-fill-in-blank playground!
 
 ```rust
- Welcome to...
+ Welcome to the
 
 ┌───────────────────────────────────────────────────────────────┐
 │ _    _       _      ___    _______    _             _       _ │
