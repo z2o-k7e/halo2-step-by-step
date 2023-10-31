@@ -121,7 +121,7 @@ use halo2_proofs::{
             let rhs = meta.query_advice(advice[1], Rotation::cur());
             let out = meta.query_advice(advice[0], Rotation::next());
             let s_mul = meta.query_selector(s_mul);
-            vec![ s_mul*(lhs*rhs - out)]
+            vec![ s_mul * (lhs * rhs - out)]
         });
   
         CircuitConfig {

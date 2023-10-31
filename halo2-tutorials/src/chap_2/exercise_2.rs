@@ -11,7 +11,7 @@ use halo2_proofs::{
     arithmetic::Field,
     plonk::{Advice, Column, Instance, Selector, ConstraintSystem, Error, Circuit, Constraints}, 
     circuit::{AssignedCell, Layouter, Value,SimpleFloorPlanner}, 
-    poly::Rotation, pasta::group::ff::PrimeField
+    poly::Rotation
 };
 
 /// Circuit design:

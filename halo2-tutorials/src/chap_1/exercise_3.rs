@@ -1,3 +1,5 @@
+// I AM NOT DONE
+
 /// Prove know  prove knowledge of two private inputs a and b
 /// s.t: a^2 * b^2 * c = out
 
@@ -65,7 +67,7 @@ fn load_constant<F:Field>(
       region.assign_advice_from_constant(
           || "private input", 
           config.advice[0], 
-          0, 
+          0,
           c
       ).map(Number)
   })
@@ -101,9 +103,12 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
   fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
       let advice = [meta.advice_column(),meta.advice_column()];
       let instance = meta.instance_column();
+      let constant = meta.fixed_column();
 
       meta.enable_equality(instance);
+      meta.enable_constant(constant);
 
+      meta.enable_equality(instance);
       for c in &advice {
           meta.enable_equality(*c);
       }
@@ -129,13 +134,12 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
       }
   }
 
-  #[]
   fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
-      let a = _________;
-      let b = _________;
+      let a = load_private(&config,layouter.namespace(|| "load a"), self.a)?;
+      let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
       let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
 
-      let ab = ________;
+      let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
       let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
       let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
 
@@ -173,7 +177,7 @@ mod tests {
   
       // Arrange the public input. We expose the multiplication result in row 0
       // of the instance column, so we position it there in our public inputs.
-      let mut public_inputs = vec![c];
+      let mut public_inputs = vec![out];
   
       // Given the correct public input, our circuit will verify.
       let prover = MockProver::run(k, &circuit, vec![public_inputs.clone()]).unwrap();

@@ -1,3 +1,6 @@
+// I AM NOT DONE
+
+
 /// Prove know  prove knowledge of two private inputs a and b
 /// s.t: a^2 * b^2 * c = out
 
@@ -65,7 +68,7 @@ fn load_constant<F:Field>(
       region.assign_advice_from_constant(
           || "private input", 
           config.advice[0], 
-          0, 
+          0,
           c
       ).map(Number)
   })
@@ -122,7 +125,8 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
           let rhs = meta.query_advice(advice[1], Rotation::cur());
           let out = meta.query_advice(advice[0], Rotation::next());
           let s_mul = meta.query_selector(s_mul);
-          vec![ s_mul * (lhs*rhs - out)]
+          vec![ (lhs * rhs - out)]
+          // vec![ s_mul * (lhs * rhs - out)]
       });
 
       CircuitConfig {
@@ -137,13 +141,12 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
       let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
       let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
 
-
       let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
       let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
       let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
 
       //expose public
-      layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 1)
+      layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
   }
 }
 

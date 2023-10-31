@@ -1,157 +1,162 @@
-/// Prove knowing knowledge of two private inputs a and b
-/// s.t: a^2 * b^2 * c = out
-
-use halo2_proofs::{
-  arithmetic::Field,
-  plonk::{Advice, Column, Instance, Selector, ConstraintSystem, Error, Circuit}, 
-  circuit::{AssignedCell, Layouter, Value,SimpleFloorPlanner}, 
-  poly::Rotation
-};
-
-/// Circuit design:
-/// | ins   | a0    | a1    | s_mul |
-/// |-------|-------|-------|-------|
-/// | out   |    a  |       |       |
-/// |       |    b  |       |       |
-/// |       |    c  |       |       |
-/// |       |   ab  |   b   |   1   |
-/// |       |   ab  |       |   0   |
-/// |       |   ab  |   ab  |   1   |
-/// |       | absq  |       |   0   |
-/// |       |  absq |   c   |   1   |
-/// |       |  out  |       |   0   |
-
-#[derive(Debug, Clone)]
-struct CircuitConfig {
-  advice: [Column<Advice>;2],
-  instance: Column<Instance>,
-  s_mul: Selector,
-}
-
-#[derive(Clone)]
-struct Number<F:Field>(AssignedCell<F,F>);
-
-#[derive(Default)]
-struct MyCircuit<F:Field> {
-  c: F,
-  a: Value<F>,
-  b: Value<F>
-}
-
-fn load_private<F:Field>( 
-  config: &CircuitConfig,
-  mut layouter: impl Layouter<F>,
-  value: Value<F>) -> Result<Number<F>, Error> {
-  layouter.assign_region(
-      || "load private", 
-      |mut region| {
-      region.assign_advice(
-          || "private input", 
-          config.advice[0], 
-          0, 
-          || value
-      ).map(Number)
-  })
-}
-
-fn load_constant<F:Field>( 
-  config: &CircuitConfig,
-  mut layouter: impl Layouter<F>,
-  c: F
-) -> Result<Number<F>, Error> {
-  layouter.assign_region(
-      || "load private", 
-  |mut region| {
-      region.assign_advice_from_constant(
-          || "private input", 
-          config.advice[0], 
-          0, 
-          c
-      ).map(Number)
-  })
-}
-
-fn mul<F:Field>(
-  config: &CircuitConfig,
-  mut layouter: impl Layouter<F>,
-  a: Number<F>,
-  b: Number<F>,
-) -> Result<Number<F>, Error> {
-  layouter.assign_region(
-      || "mul", 
-  |mut region| {
-      config.s_mul.enable(&mut region, 0)?;
-      a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
-      b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
-
-      let value = a.0.value().copied() * b.0.value().copied();
-      region.assign_advice(|| "out=lhs*rhs", config.advice[0], 1, || value)
-      .map(Number)
-  })
-}
-
-impl <F:Field> Circuit<F> for MyCircuit<F> {
-  type Config = CircuitConfig;
-  type FloorPlanner = SimpleFloorPlanner;
-
-  fn without_witnesses(&self) -> Self {
-      Self::default()
-  }
-
-  fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-      let advice = [meta.advice_column(),meta.advice_column()];
-      let instance = meta.instance_column();
-      let constant = meta.fixed_column();
-
-      meta.enable_equality(instance);
-      meta.enable_constant(constant);
-
-      for c in &advice {
-          meta.enable_equality(*c);
-      }
-      let s_mul = meta.selector();
-      /* Gate design:
-          | a0 | a1 | s_mul|
-          |----|----|------|
-          |lhs |rhs |s_mul |
-          |out |    |      |  
-      */
-      meta.create_gate("mul_gate", |meta| {
-          let lhs = meta.query_advice(advice[0], Rotation::cur());
-          let rhs = meta.query_advice(advice[1], Rotation::cur());
-          let out = meta.query_advice(advice[0], Rotation::next());
-          // let s_mul = meta.query_selector(s_mul);
-          vec![ lhs*rhs - out]
-      });
-
-      CircuitConfig {
-          advice,
-          instance,
-          s_mul
-      }
-  }
-
-  fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
-      let a = load_private(&config,layouter.namespace(|| "load a"), self.a)?;
-      let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
-      let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
-
-
-      let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
-      let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
-      let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
-
-      //expose public
-      layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
-  }
-}
+// I AM NOT DON
 
 
 
 #[cfg(test)]
 mod tests {
-  use halo2_proofs::{dev::MockProver, pasta::Fp};
-  use super::*;
+    /// Prove knowing knowledge of two private inputs a and b
+    /// s.t: a^2 * b^2 * c = out
+    use halo2_proofs::{
+      arithmetic::Field,
+      plonk::{Advice, Column, Instance, Selector, ConstraintSystem, Error, Circuit}, 
+      circuit::{AssignedCell, Layouter, Value,SimpleFloorPlanner}, 
+      poly::Rotation,
+      dev::MockProver, 
+      pasta::Fp
+    };
+
+    /// Circuit design:
+    /// | ins   | a0    | a1    | s_mul |
+    /// |-------|-------|-------|-------|
+    /// | out   |    a  |       |       |
+    /// |       |    b  |       |       |
+    /// |       |    c  |       |       |
+    /// |       |   ab  |   b   |   1   |
+    /// |       |   ab  |       |   0   |
+    /// |       |   ab  |   ab  |   1   |
+    /// |       | absq  |       |   0   |
+    /// |       |  absq |   c   |   1   |
+    /// |       |  out  |       |   0   |
+
+    #[derive(Debug, Clone)]
+    struct CircuitConfig {
+      advice: [Column<Advice>;2],
+      instance: Column<Instance>,
+      s_mul: Selector,
+    }
+
+    #[derive(Clone)]
+    struct Number<F:Field>(AssignedCell<F,F>);
+
+    #[derive(Default)]
+    struct MyCircuit<F:Field> {
+      c: F,
+      a: Value<F>,
+      b: Value<F>
+    }
+
+    fn load_private<F:Field>( 
+      config: &CircuitConfig,
+      mut layouter: impl Layouter<F>,
+      value: Value<F>) -> Result<Number<F>, Error> {
+      layouter.assign_region(
+          || "load private", 
+          |mut region| {
+          region.assign_advice(
+              || "private input", 
+              config.advice[0], 
+              0, 
+              || value
+          ).map(Number)
+      })
+    }
+
+    fn load_constant<F:Field>( 
+      config: &CircuitConfig,
+      mut layouter: impl Layouter<F>,
+      c: F
+    ) -> Result<Number<F>, Error> {
+      layouter.assign_region(
+          || "load private", 
+      |mut region| {
+          region.assign_advice_from_constant(
+              || "private input", 
+              config.advice[0], 
+              0, 
+              c
+          ).map(Number)
+      })
+    }
+
+    fn mul<F:Field>(
+      config: &CircuitConfig,
+      mut layouter: impl Layouter<F>,
+      a: Number<F>,
+      b: Number<F>,
+    ) -> Result<Number<F>, Error> {
+      layouter.assign_region(
+          || "mul", 
+      |mut region| {
+          config.s_mul.enable(&mut region, 0)?;
+          a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
+          b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
+
+          let value = a.0.value().copied() * b.0.value().copied();
+          region.assign_advice(|| "out=lhs*rhs", config.advice[0], 1, || value)
+          .map(Number)
+      })
+    }
+
+    impl <F:Field> Circuit<F> for MyCircuit<F> {
+      type Config = CircuitConfig;
+      type FloorPlanner = SimpleFloorPlanner;
+
+      fn without_witnesses(&self) -> Self {
+          Self::default()
+      }
+
+      fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
+          let advice = [meta.advice_column(),meta.advice_column()];
+          let instance = meta.instance_column();
+          let constant = meta.fixed_column();
+
+          meta.enable_equality(instance);
+          meta.enable_constant(constant);
+
+          for c in &advice {
+              meta.enable_equality(*c);
+          }
+          let s_mul = meta.selector();
+          /* Gate design:
+              | a0 | a1 | s_mul|
+              |----|----|------|
+              |lhs |rhs |s_mul |
+              |out |    |      |  
+          */
+          meta.create_gate("mul_gate", |meta| {
+            
+            let lhs = meta.query_advice(advice[0], Rotation::cur());
+              let rhs = meta.query_advice(advice[1], Rotation::cur());
+              let out = meta.query_advice(advice[0], Rotation::next());
+              let s_mul = meta.query_selector(s_mul);
+              // vec![(lhs * rhs - out)]
+              vec![ s_mul * (lhs * rhs - out)]
+          });
+          
+          CircuitConfig {
+              advice,
+              instance,
+              s_mul
+          }      
+      }
+
+      fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
+          let a = load_private(&config,layouter.namespace(|| "load a"), self.a)?;
+          let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
+          let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
+
+
+          let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
+          let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
+          let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
+
+          //expose public
+          layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
+      }
+    }
+
+
+
   #[test]
   fn test_chap_1() {
       // ANCHOR: test-circuit
