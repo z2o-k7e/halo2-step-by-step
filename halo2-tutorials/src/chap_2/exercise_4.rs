@@ -1,3 +1,6 @@
+// I AM NOT DONE
+
+
 use std::marker::PhantomData;
 
 /// chap2: chip
@@ -15,16 +18,16 @@ use halo2_proofs::{
 };
 
 /// Circuit design:
-// / | ins   | a0    | a1    | s_mul | s_add | s_cub |
-// / |  out  |-------|-------|-------|-------|-------|
-// / |       |    a  |       |       |       |       |
-// / |       |    b  |       |       |       |       |
-// / |       |    c  |       |       |       |       |
+// / | ins   |  a0   |  a1   | s_mul | s_add | s_cub |
+// / |-------|-------|-------|-------|-------|-------|
+// / |  out  |   a   |       |       |       |       |
+// / |       |   b   |       |       |       |       |
+// / |       |   c   |       |       |       |       |
 // / |       |   a   |   b   |   1   |   0   |   0   |
 // / |       |   ab  |   ab  |   1   |   0   |   0   |
 // / |       | absq  |   c   |   1   |   0   |   0   |
-// / |       |  d    |   c   |   0   |   1   |   0   |
-// / |       |  e    |   out |   0   |   0   |   1   |
+// / |       |   d   |   c   |   0   |   1   |   0   |
+// / |       |   e   |  out  |   0   |   0   |   1   |
 
 
 #[derive(Debug, Clone)]
@@ -37,15 +40,15 @@ struct SimpleConfig {
 }
 
 #[derive(Clone)]
-struct Number<F:Field>(AssignedCell<F,F>);
+struct Number<F: Field>(AssignedCell<F,F>);
 
 #[derive(Debug, Clone)]
-struct SimpleChip<F:Field> {
+struct SimpleChip<F: Field> {
     config: SimpleConfig,
     _marker: PhantomData<F>
 }
 
-impl <F:Field> SimpleChip<F> {
+impl <F: Field> SimpleChip<F> {
     pub fn construct(config: SimpleConfig) -> Self {
         SimpleChip { config, _marker: PhantomData }
     }
@@ -83,7 +86,7 @@ impl <F:Field> SimpleChip<F> {
             let lhs = meta.query_advice(advice[0], Rotation::cur());
             let out = meta.query_advice(advice[1], Rotation::cur());
             let s_cub = meta.query_selector(s_cub);
-            Constraints::with_selector(s_cub, vec![(lhs.clone()*lhs.clone()*lhs - out)])
+            Constraints::with_selector(s_cub, vec![(lhs.clone() * lhs.clone() * lhs - out)])
         });
 
         SimpleConfig {
@@ -114,34 +117,41 @@ impl <F:Field> SimpleChip<F> {
             layouter.assign_region(|| "load witness", move |mut region|{
                 let config = &self.config;
                 let mut offset = 0;
-                //load a,b
-                let (a,b, c) = &cells;
+
+                // load a, b
+                let (a, b, c) = &cells;
                 config.s_mul.enable(&mut region, offset)?;
                 let a = a.0.copy_advice(|| "lhs", &mut region, self.config.advice[0], offset).map(Number)?;
                 let b = b.0.copy_advice(|| "rhs", &mut region, self.config.advice[1], offset).map(Number)?;
-                //fill ab,ab
+
+                // fill ab, ab
                 offset += 1;
                 config.s_mul.enable(&mut region, offset)?;
                 let value = a.0.value().copied() * b.0.value().copied();
                 let ab_0 = region.assign_advice(|| "ab lhs", config.advice[0], offset, || value).map(Number)?;
                 let ab_1 = ab_0.0.copy_advice(|| "ab rhs", &mut region, self.config.advice[1], offset).map(Number)?;
-                //fill absq,c
+
+                // fill absq, c
                 offset += 1;
                 config.s_mul.enable(&mut region, offset)?;
                 let value = ab_0.0.value().copied() * ab_1.0.value().copied();
                 let absq =  region.assign_advice(|| "absq", config.advice[0], offset, || value).map(Number)?;
                 let c = c.0.copy_advice(|| "c", &mut region, self.config.advice[1], offset).map(Number)?;
-                //fill c, d
+
+                // fill c, d
                 offset += 1;
                 config.s_add.enable(&mut region, offset)?;
                 let value = absq.0.value().copied() * c.0.value().copied();
                 let d =  region.assign_advice(|| "d", config.advice[0], offset, || value).map(Number)?;
                 let c = c.0.copy_advice(|| "c", &mut region, self.config.advice[1], offset).map(Number)?;
+
                 // fill e
                 offset += 1;
                 let value = d.0.value().copied() + c.0.value().copied();
                 let e = region.assign_advice(|| "e", config.advice[0], offset, || value).map(Number)?;
-                //fill out
+
+                // fill out
+                offset += 1;
                 config.s_cub.enable(&mut region, offset)?;
                 let value = e.0.value().copied() * e.0.value().copied() * e.0.value().copied();
                 region.assign_advice(|| "out", config.advice[1], offset, || value).map(Number)
@@ -159,13 +169,13 @@ impl <F:Field> SimpleChip<F> {
 }
 
 #[derive(Default)]
-struct MyCircuit<F:Field> {
+struct MyCircuit<F: Field> {
     c: F,
     a: Value<F>,
     b: Value<F>
 }
 
-impl <F:Field> Circuit<F> for MyCircuit<F> {
+impl <F: Field> Circuit<F> for MyCircuit<F> {
     type Config = SimpleConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
@@ -180,12 +190,11 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
     fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
         //assign witness
         let chip = SimpleChip::construct(config);
-        let out = chip.assign(layouter.namespace(|| "simple ship"), self.a, self.b, self.c)?;
+        let out = chip.assign(layouter.namespace(|| "simple-ship"), self.a, self.b, self.c)?;
         //expose public
         chip.expose_public(layouter, out, 0)
     }
 }
-
 
 
 #[cfg(test)]
@@ -210,7 +219,7 @@ mod tests {
         }, out)
     }
     #[test]
-    fn test_simple_ship() {
+    fn test_chap_2_exercise_4() {
         // ANCHOR: test-circuit
         // The number of rows in our circuit cannot exceed 2^k. Since our example
         // circuit is very small, we can pick a very small value here.
@@ -235,13 +244,13 @@ mod tests {
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_chip_circuit(){
+    fn plot_chap_2_exercise_4(){
         // Instantiate the circuit with the private inputs.
         let (circuit, c) = circuit();
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./images/simple_ship.png", (1024, 768)).into_drawing_area();
+        let root = BitMapBackend::new("./circuit_layouter_plots/chap_2_exercise_4.png", (1024, 768)).into_drawing_area();
         root.fill(&WHITE).unwrap();
         let root = root
             .titled("Simple_ship Circuit chip", ("sans-serif", 60))

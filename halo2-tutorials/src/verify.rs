@@ -148,6 +148,7 @@ fn compile<'a>(
     exercise: &'a Exercise,
     progress_bar: &ProgressBar,
 ) -> Result<CompiledExercise<'a>, ()> {
+    // println!(" compile exercise {:?}",exercise  );
     let compilation_result = exercise.compile();
 
     match compilation_result {
@@ -200,13 +201,13 @@ fn prompt_for_completion(
     }
     println!();
 
-    if let Some(output) = prompt_output {
-        println!("Output:");
-        println!("{}", separator());
-        println!("{output}");
-        println!("{}", separator());
-        println!();
-    }
+    // if let Some(output) = prompt_output {
+    //     println!("Output:");
+    //     println!("{}", separator());
+    //     println!("{output}");
+    //     println!("{}", separator());
+    //     println!();
+    // }
     if success_hints {
         println!("Hints:");
         println!("{}", separator());
@@ -215,10 +216,10 @@ fn prompt_for_completion(
         println!();
     }
 
-    println!("You can keep working on this exercise,");
+    println!("Now you can review and organize the inspiration this exercise gave you!");
     println!(
         "or jump into the next one by removing the {} comment:",
-        style("`I AM NOT DONE`").bold()
+        style("`// I AM NOT DONE`").bold()
     );
     println!();
     for context_line in context {
