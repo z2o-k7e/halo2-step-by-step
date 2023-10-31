@@ -1,4 +1,4 @@
-## Halo2-Tutorial fill-in-blank playground 👾👾👾🥷🥷🥷
+## [Halo2-Tutorial] code `fill-in-blank` Playground 👾🥷👾
 
 ```rust
  Welcome to the
