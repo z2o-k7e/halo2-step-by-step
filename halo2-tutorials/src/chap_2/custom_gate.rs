@@ -1,15 +1,14 @@
 /// chap2: custom gates
 /// Prove knowing knowledge of three private inputs a , b, c
-/// s.t: 
+/// s.t:
 ///     d = a^2 * b^2 * c
 ///     e = c + d
 ///     out = e^3
-
 use halo2_proofs::{
     arithmetic::Field,
-    plonk::{Advice, Column, Instance, Selector, ConstraintSystem, Error, Circuit, Constraints}, 
-    circuit::{AssignedCell, Layouter, Value,SimpleFloorPlanner}, 
-    poly::Rotation
+    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
+    plonk::{Advice, Circuit, Column, ConstraintSystem, Constraints, Error, Instance, Selector},
+    poly::Rotation,
 };
 
 /// Circuit design:
@@ -28,10 +27,9 @@ use halo2_proofs::{
 // / |       |   e   |       |   0   |   0   |   0   |
 // / |       |   e   |  out  |   0   |   0   |   1   |
 
-
 #[derive(Debug, Clone)]
 struct CircuitConfig {
-    advice: [Column<Advice>;2],
+    advice: [Column<Advice>; 2],
     instance: Column<Instance>,
     s_mul: Selector,
     s_add: Selector,
@@ -39,46 +37,43 @@ struct CircuitConfig {
 }
 
 #[derive(Clone)]
-struct Number<F: Field>(AssignedCell<F,F>);
+struct Number<F: Field>(AssignedCell<F, F>);
 
 #[derive(Default)]
 struct MyCircuit<F: Field> {
     c: F,
     a: Value<F>,
-    b: Value<F>
+    b: Value<F>,
 }
 
-fn load_private<F: Field>( 
+fn load_private<F: Field>(
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
-    value: Value<F>) -> Result<Number<F>, Error> {
-    layouter.assign_region(
-        || "load private", 
-    |mut region| {
-        region.assign_advice(
-            || "private input", 
-            config.advice[0], 
-            0, 
-            || value
-        ).map(Number)
-    })
-}
-
-fn load_constant<F: Field>( 
-    config: &CircuitConfig,
-    mut layouter: impl Layouter<F>,
-    c: F
+    value: Value<F>,
 ) -> Result<Number<F>, Error> {
     layouter.assign_region(
-        || "load private", 
-    |mut region| {
-        region.assign_advice_from_constant(
-            || "private input", 
-            config.advice[0], 
-            0, 
-            c
-        ).map(Number)
-    })
+        || "load private",
+        |mut region| {
+            region
+                .assign_advice(|| "private input", config.advice[0], 0, || value)
+                .map(Number)
+        },
+    )
+}
+
+fn load_constant<F: Field>(
+    config: &CircuitConfig,
+    mut layouter: impl Layouter<F>,
+    c: F,
+) -> Result<Number<F>, Error> {
+    layouter.assign_region(
+        || "load private",
+        |mut region| {
+            region
+                .assign_advice_from_constant(|| "private input", config.advice[0], 0, c)
+                .map(Number)
+        },
+    )
 }
 
 fn mul<F: Field>(
@@ -88,16 +83,18 @@ fn mul<F: Field>(
     b: Number<F>,
 ) -> Result<Number<F>, Error> {
     layouter.assign_region(
-        || "mul", 
-    |mut region| {
-        config.s_mul.enable(&mut region, 0)?;
-        a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
-        b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
+        || "mul",
+        |mut region| {
+            config.s_mul.enable(&mut region, 0)?;
+            a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
+            b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
 
-        let value = a.0.value().copied() * b.0.value().copied();
-        region.assign_advice(|| "out=lhs*rhs", config.advice[0], 1, || value)
-        .map(Number)
-    })
+            let value = a.0.value().copied() * b.0.value().copied();
+            region
+                .assign_advice(|| "out=lhs*rhs", config.advice[0], 1, || value)
+                .map(Number)
+        },
+    )
 }
 
 fn add<F: Field>(
@@ -107,16 +104,18 @@ fn add<F: Field>(
     b: Number<F>,
 ) -> Result<Number<F>, Error> {
     layouter.assign_region(
-        || "add", 
-    |mut region| {
-        config.s_add.enable(&mut region, 0)?;
-        a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
-        b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
+        || "add",
+        |mut region| {
+            config.s_add.enable(&mut region, 0)?;
+            a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
+            b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
 
-        let value = a.0.value().copied() + b.0.value().copied();
-        region.assign_advice(|| "out=lhs+rhs", config.advice[0], 1, || value)
-        .map(Number)
-    })
+            let value = a.0.value().copied() + b.0.value().copied();
+            region
+                .assign_advice(|| "out=lhs+rhs", config.advice[0], 1, || value)
+                .map(Number)
+        },
+    )
 }
 
 fn cub<F: Field>(
@@ -125,17 +124,19 @@ fn cub<F: Field>(
     a: Number<F>,
 ) -> Result<Number<F>, Error> {
     layouter.assign_region(
-        || "cub", 
-    |mut region| {
-        config.s_cub.enable(&mut region, 0)?;
-        a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
-        let value = a.0.value().copied() * a.0.value().copied() * a.0.value().copied();
-        region.assign_advice(|| "out=lhs^3", config.advice[1], 0, || value)
-        .map(Number)
-    })
+        || "cub",
+        |mut region| {
+            config.s_cub.enable(&mut region, 0)?;
+            a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
+            let value = a.0.value().copied() * a.0.value().copied() * a.0.value().copied();
+            region
+                .assign_advice(|| "out=lhs^3", config.advice[1], 0, || value)
+                .map(Number)
+        },
+    )
 }
 
-impl <F: Field> Circuit<F> for MyCircuit<F> {
+impl<F: Field> Circuit<F> for MyCircuit<F> {
     type Config = CircuitConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
@@ -144,7 +145,7 @@ impl <F: Field> Circuit<F> for MyCircuit<F> {
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let advice = [meta.advice_column(),meta.advice_column()];
+        let advice = [meta.advice_column(), meta.advice_column()];
         let instance = meta.instance_column();
         let constant = meta.fixed_column();
 
@@ -185,34 +186,37 @@ impl <F: Field> Circuit<F> for MyCircuit<F> {
             instance,
             s_mul,
             s_add,
-            s_cub
+            s_cub,
         }
     }
 
-    fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
-        let a = load_private(&config,layouter.namespace(|| "load a"), self.a)?;
-        let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
-        let c = load_constant(&config,layouter.namespace(|| "load constant"), self.c)?;
+    fn synthesize(
+        &self,
+        config: Self::Config,
+        mut layouter: impl Layouter<F>,
+    ) -> Result<(), Error> {
+        let a = load_private(&config, layouter.namespace(|| "load a"), self.a)?;
+        let b = load_private(&config, layouter.namespace(|| "load b"), self.b)?;
+        let c = load_constant(&config, layouter.namespace(|| "load constant"), self.c)?;
 
-
-        let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
-        let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
+        let ab = mul(&config, layouter.namespace(|| "a*b"), a, b)?;
+        let absq = mul(&config, layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
         let d = mul(&config, layouter.namespace(|| "absq*c"), absq, c.clone())?;
 
         let e = add(&config, layouter.namespace(|| "absq + c"), d, c)?;
         let out = cub(&config, layouter.namespace(|| "e^3"), e)?;
 
         //expose public
-        layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
+        layouter
+            .namespace(|| "expose out")
+            .constrain_instance(out.0.cell(), config.instance, 0)
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
-    use halo2_proofs::{dev::MockProver, pasta::Fp};
     use super::*;
+    use halo2_proofs::{dev::MockProver, pasta::Fp};
 
     fn circuit() -> (MyCircuit<Fp>, Fp) {
         // Prepare the private and public inputs to the circuit!
@@ -221,14 +225,17 @@ mod tests {
         let b = Fp::from(3);
         let e = c * a.square() * b.square() + c;
         let out = e.cube();
-        println!("out=:{:?}",out);
-    
+        println!("out=:{:?}", out);
+
         // Instantiate the circuit with the private inputs.
-        (MyCircuit {
-            c,
-            a: Value::known(a),
-            b: Value::known(b),
-        }, out)
+        (
+            MyCircuit {
+                c,
+                a: Value::known(a),
+                b: Value::known(b),
+            },
+            out,
+        )
     }
     #[test]
     fn test_simple_3_gates() {
@@ -237,15 +244,15 @@ mod tests {
         // circuit is very small, we can pick a very small value here.
         let k = 5;
         let (circuit, out) = circuit();
-    
+
         // Arrange the public input. We expose the multiplication result in row 0
         // of the instance column, so we position it there in our public inputs.
         let mut public_inputs = vec![out];
-    
+
         // Given the correct public input, our circuit will verify.
         let prover = MockProver::run(k, &circuit, vec![public_inputs.clone()]).unwrap();
         assert_eq!(prover.verify(), Ok(()));
-    
+
         // If we try some other public input, the proof will fail!
         public_inputs[0] += Fp::one();
         let prover = MockProver::run(k, &circuit, vec![public_inputs]).unwrap();
@@ -256,13 +263,14 @@ mod tests {
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_3gates_circuit(){
+    fn plot_3gates_circuit() {
         // Instantiate the circuit with the private inputs.
         let (circuit, c) = circuit();
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./images/simple_3gates.png", (1024, 768)).into_drawing_area();
+        let root =
+            BitMapBackend::new("./images/simple_3gates.png", (1024, 768)).into_drawing_area();
         root.fill(&WHITE).unwrap();
         let root = root
             .titled("Simple_3gates Circuit without chip", ("sans-serif", 60))

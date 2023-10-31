@@ -118,17 +118,22 @@ impl Exercise {
                     .args(RUSTC_EDITION_ARGS)
                     .args(RUSTC_NO_DEBUG_ARGS)
                     .output()
-            },
+            }
 
             Mode::Test => {
                 // println!("self.test_mod.as_str() {:?}", self.test_mod.as_str());
                 Command::new("cargo")
-                // .args(&["test", "--", "--nocapture", "chap_1::exercise_1::tests::test_chap_1"])
-                .args(&["test", 
-                        "--features", self.feature.as_str(), 
-                        "--", "--nocapture", self.test_mod.as_str()])
-                .output()
-            },
+                    // .args(&["test", "--", "--nocapture", "chap_1::exercise_1::tests::test_chap_1"])
+                    .args(&[
+                        "test",
+                        "--features",
+                        self.feature.as_str(),
+                        "--",
+                        "--nocapture",
+                        self.test_mod.as_str(),
+                    ])
+                    .output()
+            }
             // Mode::Test => {
             //   // println!("Mode::Test {:?}", Mode::Test);
             //   Command::new("cargo")
@@ -145,7 +150,8 @@ impl Exercise {
             //     .args(RUSTC_EDITION_ARGS)
             //     .args(RUSTC_NO_DEBUG_ARGS)
             //     .output(),
-        }.expect("Failed to run 'compile' command.");
+        }
+        .expect("Failed to run 'compile' command.");
         // println!("cmd.status {:?}", cmd.status);
         if cmd.status.success() {
             Ok(CompiledExercise {
@@ -162,9 +168,9 @@ impl Exercise {
     }
 
     fn run(&self) -> Result<ExerciseOutput, ExerciseOutput> {
-        let output = ExerciseOutput{
-          stdout: String::from(""),
-          stderr: String::from(""),
+        let output = ExerciseOutput {
+            stdout: String::from(""),
+            stderr: String::from(""),
         };
         return Ok(output);
         // let arg = match self.mode {
@@ -367,6 +373,6 @@ mod test {
         };
         // println!("test_exercise_with_outpu  exercise  {:?}", exercise);
         let out = exercise.compile().unwrap(); //.run().unwrap();
-        // assert!(out.stdout.contains("THIS TEST TOO SHALL PASS"));
+                                               // assert!(out.stdout.contains("THIS TEST TOO SHALL PASS"));
     }
 }

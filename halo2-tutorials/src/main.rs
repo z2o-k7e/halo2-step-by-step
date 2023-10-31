@@ -3,6 +3,7 @@
 mod chap_1;
 mod chap_2;
 mod chap_3;
+mod chap_4;
 
 pub mod exercise;
 
@@ -239,7 +240,13 @@ fn main() {
         Subcommands::Run { name } => todo!(),
         Subcommands::Reset { name } => todo!(),
         Subcommands::Hint { name } => todo!(),
-        Subcommands::List { paths, names, filter, unsolved, solved } => todo!(),
+        Subcommands::List {
+            paths,
+            names,
+            filter,
+            unsolved,
+            solved,
+        } => todo!(),
         Subcommands::Lsp => todo!(),
         Subcommands::Watch { success_hints } => match watch(&exercises, verbose, success_hints) {
             Err(e) => {
@@ -262,7 +269,6 @@ fn main() {
                 println!("If you want to continue working on the exercises at a later point, you can simply run `rustlings watch` again");
             }
         },
-
     }
 }
 
@@ -292,7 +298,9 @@ fn spawn_watch_shell(
                     println!("Bye!");
                 } else if input.eq("help") {
                     println!("Commands available to you in watch mode:");
-                    println!("  hint   - alsways try to use it, prints the current exercise's hint");
+                    println!(
+                        "  hint   - alsways try to use it, prints the current exercise's hint"
+                    );
                     println!("  clear  - clears the screen");
                     println!("  quit   - quits watch mode");
                     println!("  !<cmd> - executes a command, like `!rustc --explain E0381`");
@@ -524,4 +532,3 @@ const WELCOME: &str = r" Welcome to...
 |  _| | / _ \ | |  / _ \   / /     | || / / |\_ _| / _ \ 
 | | | || |_||/| | | |_| | / /_     | || |_| | | |_| (_)|   
 |_| |_| \____/|__| \___/ /____| __ |_| \__,_\ \__/ \__* ";
-
