@@ -2,47 +2,140 @@
 [[exercises]]
 name = "simple"
 # path = "src/chap_1/exercise_1.rs"
-test_mod = "chap_1::exercise_1::tests::test_chap_1"
+test_mod = "chap_1::exercise_1::tests::test_chap_1_exercise_1"
 path = "src/chap_1/exercise_1.rs"
 feature = "chap_1_exercise_1"
 mode = "test"
 hint = """
 ----------------- hint ! ---------------------------------
 Halo2 Exercise 1 :
+* ref link: https://learn.z2o-k7e.world/halo2/chap-1/index.html
 * Error file: src/chap_1/exercise_1.rs
 
 Try to find the ConstraintNotSatisfied,
 
-In the sentence // vec![(lhs * rhs - out)]
+line 130:     let out = meta.query_advice(advice[0], Rotation::next());
+line 131:     });
 
-there must be some errors...
+We might have missed something there...
+
+🌟 We believe that you can do it !!!  🚀
+😊 Please do not give up ~
 ----------------------------------------------------------
 """
 
 
 [[exercises]]
 name = "simple-2"
-test_mod = "chap_1::exercise_2::tests::test_chap_1"
+test_mod = "chap_1::exercise_2::tests::test_chap_1_exercise_2"
 path = "src/chap_1/exercise_2.rs"
 feature = "chap_1_exercise_2"
 mode = "test"
 hint = """
-Halo2 Exercise 2 :
-Error file: src/chap_1/exercise_2.rs
+----------------- hint ! ---------------------------------
+Halo2-Exercise 2 :
+* ref link: https://learn.z2o-k7e.world/halo2/chap-1/index.html
+* Error file: src/chap_1/exercise_2.rs
 
-Try to find the ConstraintNotSatisfied!!!
+Try to fill in the blank with the correct value of `fn synthesize`:
+
+line-146:    let ab   = ____;
+line-147:    let absq = ____;
+line-148:    let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
+
+Try it, Every step counts! 🌈
+----------------------------------------------------------
 """
 
 [[exercises]]
 name = "simple-3"
-test_mod = "chap_1::exercise_3::tests::test_chap_1"
+test_mod = "chap_1::exercise_3::tests::test_chap_1_exercise_3"
 path = "src/chap_1/exercise_3.rs"
 feature = "chap_1_exercise_3"
 mode = "test"
 hint = """
+----------------- hint ! ---------------------------------
 Halo2 Exercise 3 :
-Error file: src/chap_1/exercise_3.rs
+* ref link: https://learn.z2o-k7e.world/halo2/chap-0/index.html
+* Error file: src/chap_1/exercise_3.rs
 
-Try to find the ConstraintNotSatisfied!!!
+This area assignment seems to go to a strange place...
+
+line-125:      meta.create_gate("mul_gate", |meta| {
+line-126:          let lhs = meta.query_advice(advice[0], Rotation::cur());
+line-127:          let rhs = meta.query_advice(advice[1], Rotation::cur());
+
+Need to find the mismatched place.
+
+You've successfully solved 2 problems. I know you've got this! 💪✨
+----------------------------------------------------------
+"""
+
+[[exercises]]
+name = "chip-1"
+test_mod = "chap_2::exercise_4::tests::test_chap_2_exercise_4"
+path = "src/chap_2/exercise_4.rs"
+feature = "chap_2_exercise_4"
+mode = "test"
+hint = """
+----------------- hint ! ---------------------------------
+Halo2 Exercise 4 :
+* ref link: https://learn.z2o-k7e.world/halo2/chap-2/index.html
+* Error file: src/chap_2/exercise_4.rs
+
+There are many Custom Gates, follow the increasing `offset` to figure out 
+how the gates are arranged.
+Feel free to map it out on paper📝 and identify any issues that arise. LFG!
+
+
+line-150      // fill out
+line-151      offset += 1;
+line-152      config.s_cub.enable(&mut region, offset)?;
+line-153      let value = e.0.value().copied() * e.0.value().copied() * e.0.value().copied();
+line-154      region.assign_advice(|| "out", config.advice[1], offset, || value).map(Number)
+
+You've successfully solved 3 problems.  Go on! 💪💪💪💪✨
+----------------------------------------------------------
+"""
+
+
+[[exercises]]
+name = "chip-2-complex-gate"
+test_mod = "chap_2::exercise_5::tests::test_chap_2_exercise_5"
+path = "src/chap_2/exercise_5.rs"
+feature = "chap_2_exercise_5"
+mode = "test"
+hint = """
+----------------- hint ! ---------------------------------
+Halo2 Exercise 5 :
+* ref link: https://learn.z2o-k7e.world/halo2/chap-2/index.html
+* Error file: src/chap_2/exercise_5.rs
+
+in exercise 4, our circuit design like:
+
+/// Circuit design:
+// / | ins   |  a0   |  a1   | s_mul | s_add | s_cub |
+// / |-------|-------|-------|-------|-------|-------|
+// / |  out  |   a   |       |       |       |       |
+// / |       |   b   |       |       |       |       |
+// / |       |   c   |       |       |       |       |
+// / |       |   a   |   b   |   1   |   0   |   0   |
+// / |       |   ab  |   ab  |   1   |   0   |   0   |
+// / |       | absq  |   c   |   1   |   0   |   0   |
+// / |       |   d   |   c   |   0   |   1   |   0   |
+// / |       |   e   |  out  |   0   |   0   |   1   |
+
+How can we transform it to look like the following? 🤔👇, To express $d = (a^2*b^2*c + c)^3$ in one line ?
+
+
+// / | ins   |  a0   |  a1  |  a2  | s_cpx |
+// / |-------|-------|------|------|-------|
+// / |  out  |   a   |   b  |   c  |   1   |
+// / |       |  out  |      |      |       |
+
+This might get a bit complex, as it entails tweaking several custom gates and 
+assignments within the configure() & assign() function. 
+But I'm confident you've got this! 💪🔧
+----------------------------------------------------------
 """
 

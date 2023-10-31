@@ -1,6 +1,5 @@
 // I AM NOT DONE
 
-
 #[cfg(test)]
 mod tests {
     /// Prove knowing knowledge of two private inputs a and b
@@ -116,19 +115,20 @@ mod tests {
               meta.enable_equality(*c);
           }
           let s_mul = meta.selector();
+          
           /* Gate design:
-              | a0 | a1 | s_mul|
-              |----|----|------|
-              |lhs |rhs |s_mul |
-              |out |    |      |  
+              | a0  |  a1 | s_mul |
+              | ----|-----|-------|
+              | lhs | rhs | s_mul |
+              | out |     |       |  
           */
           meta.create_gate("mul_gate", |meta| {
             
               let lhs = meta.query_advice(advice[0], Rotation::cur());
               let rhs = meta.query_advice(advice[1], Rotation::cur());
               let out = meta.query_advice(advice[0], Rotation::next());
-              let s_mul = meta.query_selector(s_mul);
-              // vec![s_mul * (lhs * rhs - out)]
+              // let s_mul = meta.query_selector(s_mul);
+              // vec![ s_mul * (lhs * rhs - out)]
           });
           
           CircuitConfig {
@@ -156,7 +156,7 @@ mod tests {
 
 
   #[test]
-  fn test_chap_1() {
+  fn test_chap_1_exercise_1() {
       // ANCHOR: test-circuit
       // The number of rows in our circuit cannot exceed 2^k. Since our example
       // circuit is very small, we can pick a very small value here.
@@ -194,13 +194,13 @@ mod tests {
 
   #[cfg(feature = "dev-graph")]
   #[test]
-  fn plot_chap_1_circuit(){
+  fn plot_chap_1_exercise_1(){
       // Instantiate the circuit with the private inputs.
       let circuit = MyCircuit::<Fp>::default();
       // Create the area you want to draw on.
       // Use SVGBackend if you want to render to .svg instead.
       use plotters::prelude::*;
-      let root = BitMapBackend::new("./images/chap_1_simple.png", (1024, 768)).into_drawing_area();
+      let root = BitMapBackend::new("./circuit_layouter_plots/chap_1_exercise_1.png", (1024, 768)).into_drawing_area();
       root.fill(&WHITE).unwrap();
       let root = root
           .titled("Simple Circuit without chip", ("sans-serif", 60))

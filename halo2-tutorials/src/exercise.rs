@@ -121,7 +121,7 @@ impl Exercise {
             },
 
             Mode::Test => {
-                println!("self.test_mod.as_str() {:?}", self.test_mod.as_str());
+                // println!("self.test_mod.as_str() {:?}", self.test_mod.as_str());
                 Command::new("cargo")
                 // .args(&["test", "--", "--nocapture", "chap_1::exercise_1::tests::test_chap_1"])
                 .args(&["test", 

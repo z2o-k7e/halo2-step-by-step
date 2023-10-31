@@ -14,19 +14,19 @@ use halo2_proofs::{
 
 /// Circuit design:
 // / | ins   | a0    | a1    | s_mul | s_add | s_cub |
-// / |  out  |-------|-------|-------|-------|-------|
-// / |       |    a  |       |       |       |       |
-// / |       |    b  |       |       |       |       |
-// / |       |   c  |        |       |       |       |
-// / |       |   a  |   b   |   1   |   0   |   0   |
-// / |       |   ab  |       |   0   |   0   |   0   |
-// / |       |   ab  |   ab  |   1   |   0   |   0   |
+// / | ------|-------|-------|-------|-------|-------|
+// / |  out  |   a   |       |       |       |       |
+// / |       |   b   |       |       |       |       |
+// / |       |   c   |       |       |       |       |
+// / |       |   a   |   b   |   1   |   0   |   0   |
+// / |       |  ab   |       |   0   |   0   |   0   |
+// / |       |  ab   |   ab  |   1   |   0   |   0   |
 // / |       | absq  |       |   0   |   0   |   0   |
-// / |       |  absq |   c   |   1   |   0   |   0   |
-// / |       |  d    |       |   0   |   0   |   0   |
-// / |       |  c    |  d    |   0   |   1   |   0   |
-// / |       |  e    |       |   0   |   0   |   0   |
-// / |       |  e    |  out  |   0   |   0   |   1   |
+// / |       | absq  |   c   |   1   |   0   |   0   |
+// / |       |   d   |       |   0   |   0   |   0   |
+// / |       |   c   |   d   |   0   |   1   |   0   |
+// / |       |   e   |       |   0   |   0   |   0   |
+// / |       |   e   |  out  |   0   |   0   |   1   |
 
 
 #[derive(Debug, Clone)]
@@ -39,16 +39,16 @@ struct CircuitConfig {
 }
 
 #[derive(Clone)]
-struct Number<F:Field>(AssignedCell<F,F>);
+struct Number<F: Field>(AssignedCell<F,F>);
 
 #[derive(Default)]
-struct MyCircuit<F:Field> {
+struct MyCircuit<F: Field> {
     c: F,
     a: Value<F>,
     b: Value<F>
 }
 
-fn load_private<F:Field>( 
+fn load_private<F: Field>( 
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
     value: Value<F>) -> Result<Number<F>, Error> {
@@ -64,7 +64,7 @@ fn load_private<F:Field>(
     })
 }
 
-fn load_constant<F:Field>( 
+fn load_constant<F: Field>( 
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
     c: F
@@ -81,7 +81,7 @@ fn load_constant<F:Field>(
     })
 }
 
-fn mul<F:Field>(
+fn mul<F: Field>(
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
     a: Number<F>,
@@ -100,7 +100,7 @@ fn mul<F:Field>(
     })
 }
 
-fn add<F:Field>(
+fn add<F: Field>(
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
     a: Number<F>,
@@ -119,7 +119,7 @@ fn add<F:Field>(
     })
 }
 
-fn cub<F:Field>(
+fn cub<F: Field>(
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
     a: Number<F>,
@@ -129,13 +129,13 @@ fn cub<F:Field>(
     |mut region| {
         config.s_cub.enable(&mut region, 0)?;
         a.0.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
-        let value = a.0.value().copied()*a.0.value().copied()*a.0.value().copied();
+        let value = a.0.value().copied() * a.0.value().copied() * a.0.value().copied();
         region.assign_advice(|| "out=lhs^3", config.advice[1], 0, || value)
         .map(Number)
     })
 }
 
-impl <F:Field> Circuit<F> for MyCircuit<F> {
+impl <F: Field> Circuit<F> for MyCircuit<F> {
     type Config = CircuitConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
@@ -177,7 +177,7 @@ impl <F:Field> Circuit<F> for MyCircuit<F> {
             let lhs = meta.query_advice(advice[0], Rotation::cur());
             let out = meta.query_advice(advice[1], Rotation::cur());
             let s_cub = meta.query_selector(s_cub);
-            Constraints::with_selector(s_cub, vec![(lhs.clone()*lhs.clone()*lhs - out)])
+            Constraints::with_selector(s_cub, vec![(lhs.clone() * lhs.clone() * lhs - out)])
         });
 
         CircuitConfig {
@@ -231,7 +231,7 @@ mod tests {
         }, out)
     }
     #[test]
-    fn test_simple_3gates() {
+    fn test_simple_3_gates() {
         // ANCHOR: test-circuit
         // The number of rows in our circuit cannot exceed 2^k. Since our example
         // circuit is very small, we can pick a very small value here.

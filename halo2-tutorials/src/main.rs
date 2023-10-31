@@ -271,7 +271,11 @@ fn spawn_watch_shell(
     should_quit: Arc<AtomicBool>,
 ) {
     let failed_exercise_hint = Arc::clone(failed_exercise_hint);
-    println!("Welcome to watch mode! You can type 'help' to get an overview of the commands you can use here.");
+    println!("----------------------------------------------------------");
+    println!("  Welcome to halo2 Monsters World {emoji}{emoji}! type 'help' to get an overview of the commands you can use here.", emoji = Emoji("👾", "★"));
+    println!("  `hint` are your magical weapon{emoji} against the coding monsters. Wield them wisely! {emoji}.", emoji = Emoji("🔮","✨"));
+    println!("----------------------------------------------------------");
+
     thread::spawn(move || loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
@@ -288,11 +292,10 @@ fn spawn_watch_shell(
                     println!("Bye!");
                 } else if input.eq("help") {
                     println!("Commands available to you in watch mode:");
-                    println!("  hint   - prints the current exercise's hint");
+                    println!("  hint   - alsways try to use it, prints the current exercise's hint");
                     println!("  clear  - clears the screen");
                     println!("  quit   - quits watch mode");
                     println!("  !<cmd> - executes a command, like `!rustc --explain E0381`");
-                    println!("  help   - displays this help message");
                     println!();
                     println!("Watch mode automatically re-evaluates the current exercise");
                     println!("when you edit a file's contents.")
@@ -388,7 +391,7 @@ fn watch(
                             );
                         let num_done = exercises.iter().filter(|e| e.looks_done()).count();
                         clear_screen();
-                        println!("......", );
+                        // println!("......", );
                         match verify(
                             pending_exercises,
                             (num_done, exercises.len()),

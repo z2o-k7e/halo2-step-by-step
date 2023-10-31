@@ -135,7 +135,7 @@ mod tests {
               advice,
               instance,
               s_mul
-          }      
+          }
       }
 
       fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
@@ -143,10 +143,12 @@ mod tests {
           let b = load_private(&config,layouter.namespace(|| "load b"), self.b)?;
           let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
 
-
           let ab = ____ ;
-          let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
+          let absq = ____;
           let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
+          // let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
+          // let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
+          // let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
 
           //expose public
           layouter.namespace(|| "expose out").constrain_instance(out.0.cell(), config.instance, 0)
@@ -156,7 +158,7 @@ mod tests {
 
 
   #[test]
-  fn test_chap_1() {
+  fn test_chap_1_exercise_2() {
       // ANCHOR: test-circuit
       // The number of rows in our circuit cannot exceed 2^k. Since our example
       // circuit is very small, we can pick a very small value here.
@@ -194,13 +196,13 @@ mod tests {
 
   #[cfg(feature = "dev-graph")]
   #[test]
-  fn plot_chap_1_circuit(){
+  fn plot_chap_1_exercise_2(){
       // Instantiate the circuit with the private inputs.
       let circuit = MyCircuit::<Fp>::default();
       // Create the area you want to draw on.
       // Use SVGBackend if you want to render to .svg instead.
       use plotters::prelude::*;
-      let root = BitMapBackend::new("./images/chap_1_simple.png", (1024, 768)).into_drawing_area();
+      let root = BitMapBackend::new("./circuit_layouter_plots/chap_1_exercise_2.png", (1024, 768)).into_drawing_area();
       root.fill(&WHITE).unwrap();
       let root = root
           .titled("Simple Circuit without chip", ("sans-serif", 60))

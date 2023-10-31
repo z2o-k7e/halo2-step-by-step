@@ -10,9 +10,8 @@ dev-graph = ["halo2_proofs/dev-graph", "plotters", "plotters/bitmap_backend","pl
 chap_1_exercise_1 = []
 chap_1_exercise_2 = []
 chap_1_exercise_3 = []
-chap_2_exercise_1 = []
-chap_2_exercise_2 = []
-
+chap_2_exercise_4 = []
+chap_2_exercise_5 = []
 
 [dependencies]
 halo2_proofs = { git = "https://github.com/zcash/halo2.git", version = "0.3"}

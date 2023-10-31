@@ -126,6 +126,9 @@ mod tests {
             
               let lhs = meta.query_advice(advice[0], Rotation::cur());
               let rhs = meta.query_advice(advice[1], Rotation::cur());
+              // Error
+              // let rhs = meta.query_advice(advice[0], Rotation::next());
+              // let out = meta.query_advice(advice[0], Rotation(2));
               let out = meta.query_advice(advice[0], Rotation::next());
               let s_mul = meta.query_selector(s_mul);
               vec![s_mul * (lhs * rhs - out)]
@@ -144,7 +147,7 @@ mod tests {
           let c = load_constant(&config,layouter.namespace(|| "load c"), self.c)?;
 
 
-          let ab = ____ ;
+          let ab = mul(&config,layouter.namespace(|| "a*b"), a, b)?;
           let absq = mul(&config,layouter.namespace(|| "ab*ab"), ab.clone(), ab)?;
           let out = mul(&config, layouter.namespace(|| "absq*c"), absq, c)?;
 
@@ -156,7 +159,7 @@ mod tests {
 
 
   #[test]
-  fn test_chap_1() {
+  fn test_chap_1_exercise_3() {
       // ANCHOR: test-circuit
       // The number of rows in our circuit cannot exceed 2^k. Since our example
       // circuit is very small, we can pick a very small value here.
@@ -194,13 +197,13 @@ mod tests {
 
   #[cfg(feature = "dev-graph")]
   #[test]
-  fn plot_chap_1_circuit(){
+  fn plot_chap_1_exercise_3(){
       // Instantiate the circuit with the private inputs.
       let circuit = MyCircuit::<Fp>::default();
       // Create the area you want to draw on.
       // Use SVGBackend if you want to render to .svg instead.
       use plotters::prelude::*;
-      let root = BitMapBackend::new("./images/chap_1_simple.png", (1024, 768)).into_drawing_area();
+      let root = BitMapBackend::new("./circuit_layouter_plots/chap_1_exercise_3.png", (1024, 768)).into_drawing_area();
       root.fill(&WHITE).unwrap();
       let root = root
           .titled("Simple Circuit without chip", ("sans-serif", 60))

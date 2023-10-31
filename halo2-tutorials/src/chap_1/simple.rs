@@ -110,11 +110,12 @@ use halo2_proofs::{
             meta.enable_equality(*c);
         }
         let s_mul = meta.selector();
+        
         /* Gate design:
-            | a0 | a1 | s_mul|
-            |----|----|------|
-            |lhs |rhs |s_mul |
-            |out |    |      |  
+              | a0  |  a1 | s_mul |
+              | ----|-----|-------|
+              | lhs | rhs | s_mul |
+              | out |     |       |  
         */
         meta.create_gate("mul_gate", |meta| {
             let lhs = meta.query_advice(advice[0], Rotation::cur());
