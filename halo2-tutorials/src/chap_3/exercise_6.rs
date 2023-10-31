@@ -18,7 +18,7 @@ use halo2_proofs::{
 
 #[derive(Clone, Debug)]
 struct FiboChipConfig {
-    advice: [Column<Advice>;2],
+    advice: [Column<Advice>; 2],
     selector: Selector,
     instance: Column<Instance>
 }
@@ -45,10 +45,6 @@ impl <F:Field> FiboChip<F> {
             meta.enable_equality(*col);
         }
         
-        // | a0     |   a1   | seletor|
-        // |--------|--------|--------|
-        // | f(0)=a | f(1)=b |    1   | 
-        // | f(2)=b | f(3)   |        |  
         meta.create_gate( "fibo gate", |meta|{
             let s = meta.query_selector(selector);
             let cur_left = meta.query_advice(advice[0], Rotation::cur());
@@ -57,14 +53,13 @@ impl <F:Field> FiboChip<F> {
             let next_right = meta.query_advice(advice[1], Rotation::next());
             Constraints::with_selector(s, 
                 vec![
-                    (cur_left + cur_right.clone() - next_left.clone()), // f(0) + f(1) = f(2)
-                    (cur_right + next_left - next_right)]               // f(1) + f(2) = f(3)
+                    (cur_left + cur_right.clone() - next_left.clone()), 
+                    (cur_right + next_left - next_right)]
                 )
         });
-
-        FiboChipConfig {advice, selector, instance}
+        FiboChipConfig { advice, selector, instance }
     }
-
+    
     fn assign(
         &self,
         mut layouter: impl Layouter<F>,
@@ -76,7 +71,6 @@ impl <F:Field> FiboChip<F> {
             let instance = self.config.instance;
             let s = self.config.selector;
  
-            // get f(0), f(1) from instance col.
             let mut prev_left = region.assign_advice_from_instance(
                 ||"f0", 
                 instance, 
@@ -90,7 +84,7 @@ impl <F:Field> FiboChip<F> {
                 right_advice, 
                 0).map(ACell)?;
             
-            for i in 1..=nrow / 2 {
+            for i in 1..=nrow/2 {
                 s.enable(&mut region, i-1)?;   
                 let value = prev_left.0.value().copied() + prev_right.0.value().copied();
                 let cur_left = region.assign_advice(
@@ -162,13 +156,12 @@ mod tests {
     fn test_fibo2(){
         let f0 = Fp::from(1);
         let f1 = Fp::from(1);
-        let n = 14;
+        let n = 11;
         let out = Fp::from(fib(n));
-        println!("out {:?}", out);
-        let circuit = FiboCircuit{nrow: n as usize, _marker: PhantomData};
+        let circuit = FiboCircuit{nrow: n as usize,_marker: PhantomData};
 
         let k = 4;
-        let public_inputs = vec![f0, f1, out];
+        let public_inputs = vec![f0,f1,out];
         let prover = MockProver::run(k,&circuit,vec![public_inputs.clone()]).unwrap();
         prover.assert_satisfied();
     }
@@ -177,11 +170,11 @@ mod tests {
     #[test]
     fn plot_fibo2_circuit(){
         // Instantiate the circuit with the private inputs.
-        let circuit =  FiboCircuit::<Fp>{nrow: 14, _marker: PhantomData};
+        let circuit =  FiboCircuit::<Fp>{nrow:20,_marker: PhantomData};
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./circuit_layouter_plots/fibo2-n_is_14.png", (1024, 768)).into_drawing_area();
+        let root = BitMapBackend::new("./images/fibo2.png", (1024, 768)).into_drawing_area();
         root.fill(&WHITE).unwrap();
         let root = root
             .titled("Fibo Circuit", ("sans-serif", 60))
