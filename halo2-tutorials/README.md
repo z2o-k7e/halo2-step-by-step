@@ -1,3 +1,4 @@
+
 ```rust
  Welcome to...
  _   _                             _______
@@ -65,7 +66,9 @@ $ cargo run watch  # begin the journey!
 
 ### What's the Deal?
 
-Your mission, is to fill in the blanks (literally!) and make sure the circuit compiles and passes all tests.
+Your mission, is to fill in the blanks (literally!) or find the error in code .
+
+and make sure the circuit compiles and passes the MockProver verify test.
 
 ### Before You Dive In
 
@@ -80,24 +83,14 @@ First thing's first: Ensure your programming environment:
 - Wanna see some error? Try `cargo test -- --nocapture chap_1::exercise_1::tests::test_chap_1` and feast your eyes on those errors and warnings.
 - Now, with your vast ocean of `halo2` and Rust knowledge, try filling in those gaps. Feeling puzzled? Just backtrack and dive into any related reads. 📚
 
-### The Ultimate Quest
-
-Get your terminal to shout `xx success OHHHHHHHHH!`. Go get 'em, tiger! 🚀
-
-------
-
-### 代码练习顺序
-
-```bash
-Part-1: 
-$ cargo test -- --nocapture chap_1::exercise_1::tests::test_chap_1
-$ cargo test -- --nocapture chap_1::exercise_2::tests::test_chap_1
-
-Draw:
-$ cargo test --all-features -- --nocapture chap_1::exercise_1::tests::plot_chap_1_circuit 
 ```
-
-
+git clone https://github.com/zkp-co-learning/halo2-step-by-step 
+cd halo2-tutorials
+cargo run
+cargo run watch
+- hint 
+- help
+```
 
 
 There you go ~ 🎈
