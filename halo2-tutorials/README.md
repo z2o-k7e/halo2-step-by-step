@@ -12,8 +12,10 @@
 │|_|  |_|\__,_|_|\___/____|    |_|\__,_|\__\___/|_|  |_|\__,_|_|│
 └───────────────────────────────────────────────────────────────┘
 
-$ cargo run        # introduction
-$ cargo run watch  # begin the journey!
+Quick Start:
+
+$ cargo run         # show the intro.
+$ cargo run watch   # begin the passionate journey!
 ```
 
 
@@ -33,7 +35,7 @@ and make sure taht the circuit compiles and passes the `MockProver` verify test.
 
 ### Start coding!
 
-```
+```bash
 git clone https://github.com/zkp-co-learning/halo2-step-by-step 
 cd halo2-tutorials
 cargo run
@@ -41,26 +43,28 @@ cargo run watch
 - hint 
 - help
 ```
-- Everytime you crtl+s to save the file, it will auto-compile to check the verification.
-- if you compiled it successfully, remove the `// I AM NOT DONE`  symbol, then you can go to the next level !
 
-----
+- Every time you hit `ctrl+s` to save the file, it automatically compiles for verification.
+- Once you've successfully compiled, remove the  `// I AM NOT DONE` marker to advance to the next level.
+
+
 
 ### Processes
 
-when you face the first challenge: 
+When you tackle the first challenge:
 
 <img width="716" alt="1" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/e4e28c70-21f1-45ac-8f34-8e29d4e3fe46">
 
-Receive some `hints` from friends:
+Get some helpful `hints` from your pals (You're not alone ~):
 
 <img width="735" alt="image" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/44a9835e-8e8b-45d4-b83a-aef38b00e66b">
 
-Finally, When you complete your first challenge:
+And voilà!  When you've **conquered your first challenge**:
 
 <img width="795" alt="image" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/36df753b-1299-4101-8a26-75ef0be790cc">
 
-remove the `// I AM NOT DONE`  to continue!
+Simply remove the // I AM NOT DONE marker to proceed!
 
+-----
 
-There you go ~ 🎈
+#### Enjoy the journey! 🎈
