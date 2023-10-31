@@ -55,16 +55,34 @@ When you tackle the first challenge:
 
 <img width="716" alt="1" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/e4e28c70-21f1-45ac-8f34-8e29d4e3fe46">
 
+<br />
+
 Get some helpful `hints` from your pals (You're not alone ~):
 
 <img width="735" alt="image" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/44a9835e-8e8b-45d4-b83a-aef38b00e66b">
+
+<br />
+
 
 And voilà!  When you've **conquered your first challenge**:
 
 <img width="795" alt="image" src="https://github.com/zkp-co-learning/halo2-step-by-step/assets/33189338/36df753b-1299-4101-8a26-75ef0be790cc">
 
+<br />
+
+
 Simply remove the // I AM NOT DONE marker to proceed!
+
+<br />
+
 
 -----
 
-#### Enjoy the journey! 🎈
+<br />
+
+
+
+### Enjoy the journey! 🎈
+
+
+##### deeply inspired by amazing [Rustlings](https://github.com/rust-lang/rustlings)
