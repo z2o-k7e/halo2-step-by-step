@@ -10,16 +10,16 @@ use halo2_proofs::{
 };
 
 /// Circuit design:
-/// | ins   | a0    | seletor |
-/// |-------|-------|-------|
-/// |   a   | f(0)=a|    1  | 
-/// |   b   | f(1)=b|    1  |  
-/// |  out  | f(2)  |    1  |  
-/// |       | f(3)  |   1   |   
-/// |          ...          |
-/// |       | f(n-2)|   1   | 
-/// |       | f(n-1)|   0   |   
-/// |       |f(n)=out|  0  |   
+/// |  ins  |   a0    | seletor|
+/// |-------|---------|--------|
+/// |   a   | f(0)=a  |   1    | 
+/// |   b   | f(1)=b  |   1    |  
+/// |  out  | f(2)    |   1    |  
+/// |       | f(3)    |   1    |   
+/// |       |  ...    |        |
+/// |       | f(n-2)  |   1    | 
+/// |       | f(n-1)  |   0    |   
+/// |       | f(n)=out|   0    |    
 
 #[derive(Debug, Clone)]
 struct FiboChipConfig {
@@ -61,7 +61,7 @@ impl <F:Field> FiboChip<F> {
                 let next_row = meta.query_advice(advice, Rotation::next());
                 let third_row = meta.query_advice(advice, Rotation(2)); 
                 let s = meta.query_selector(selector);
-                vec![s*(cur_row + next_row - third_row)]
+                vec![s * (cur_row + next_row - third_row)]
             }
         );
 
@@ -152,7 +152,7 @@ mod tests {
 
         let k = 4;
         let public_inputs = vec![f0, f1, out];
-        let prover = MockProver::run(k,&circuit,vec![public_inputs.clone()]).unwrap();
+        let prover = MockProver::run(k, &circuit, vec![public_inputs.clone()]).unwrap();
         prover.assert_satisfied();
     }
 
@@ -164,7 +164,7 @@ mod tests {
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./images/fibo.png", (1024, 768)).into_drawing_area();
+        let root = BitMapBackend::new("./circuit_layouter_plots/fibo_1.png", (1024, 768)).into_drawing_area();
         root.fill(&WHITE).unwrap();
         let root = root
             .titled("Fibo Circuit", ("sans-serif", 60))
