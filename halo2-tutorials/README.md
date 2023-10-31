@@ -1,5 +1,5 @@
 ## Halo2-Tutorial fill-in-blank playground 👾👾👾🥷🥷🥷
-👾
+
 ```rust
  Welcome to the
 
@@ -19,19 +19,17 @@ $ cargo run watch  # begin the journey!
 
 ### Intro
 
-🎉 Hey there, code warrior! 🎉 Ready for some `halo2` code fill-in-the-blanks <del>exercise</del> fun? This challenge is specially for you to learn **`halo2`** and **Rust**!
+🎉 Hey there, code warrior! 🎉 
+
+Ready for some `halo2` code fill-in-the-blanks <del>exercise</del> fun? 
+
+This challenge is specially for you to learn **`halo2`** !
 
 ### What's the Deal?
 
-Your mission, is to fill in the blanks (literally!) or find the error in code .
+Your mission, is to **fill in the blanks** (literally!) or **find the bug** in code .
 
-and make sure the circuit compiles and passes the MockProver verify test.
-
-### Before You Dive In
-
-First thing's first: Ensure your programming environment:
-
-- Rust is all you neeeed. 🛠️
+and make sure taht the circuit compiles and passes the `MockProver` verify test.
 
 ### Start coding!
 
@@ -47,6 +45,8 @@ cargo run watch
 - if you compiled it successfully, remove the `// I AM NOT DONE`  symbol, then you can go to the next level !
 
 ----
+
+### Processes
 
 when you face the first challenge: 
 
