@@ -119,7 +119,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_rangecheck_lookup() {
+    fn test_1_col_rangecheck_lookup() {
         const NUM: usize = 3;
         let mut values = vec![];
         for i in 0..NUM {
@@ -144,17 +144,17 @@ mod tests {
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_lookup_circuit() {
+    fn plot_1_col_rangecheck_lookup() {
         // Instantiate the circuit with the private inputs.
         let circuit = MyCircuit::<Fp, 16, 5>::default();
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./circuit_layouter_plots/lookup.png", (1024, 768))
+        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_1_col_rangecheck_lookup.png", (1024, 768))
             .into_drawing_area();
         root.fill(&WHITE).unwrap();
         let root = root
-            .titled("Simple Lookup Circuit", ("sans-serif", 60))
+            .titled("1_col_rangecheck_lookup", ("sans-serif", 60))
             .unwrap();
 
         halo2_proofs::dev::CircuitLayout::default()
@@ -163,6 +163,8 @@ mod tests {
             // .view_height(0..16)
             // You can hide labels, which can be useful with smaller areas.
             .show_labels(true)
+            .mark_equality_cells(true)
+            .show_equality_constraints(true)
             // Render the circuit onto your area!
             // The first argument is the size parameter for the circuit.
             .render(5, &circuit, &root)

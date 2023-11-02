@@ -3,14 +3,22 @@
 ///
 /// The lookup table is tagged by `num_bits` to give a strict range check.
 ///
-///        value     |      bit    |   q_lookup  |  table_n_bits  |  table_value  |
-///       ---------------------------------------------------------------------------
-///          v_0     |      0      |      0      |        1         |       0       |
-///          v_1     |      1      |      1      |        1         |       1       |
-///          ...     |     ...     |     ...     |        2         |       2       |
-///          ...     |     ...     |     ...     |        2         |       3       |
-///          ...     |     ...     |     ...     |        3         |       4       |
-///
+/// ------------------
+/// | private inputs |
+/// ------------------
+/// | value |  bit   | q_lookup  | table_n_bits | table_value |
+/// -----------------------------------------------------------
+/// |  v_0  |   0    |    0      |       1      |      0      |
+/// |  v_1  |   1    |    1      |       1      |      1      |
+/// |  ...  |  ...   |   1       |       2      |      2      |
+/// |  ...  |  ...   |   1       |       2      |      3      |
+/// |  ...  |  ...   |   1       |       3      |      4      |
+/// |  ...  |  ...   |   1       |       3      |      5      |
+/// |  ...  |  ...   |   1       |       3      |      6      |
+/// |  ...  |  ...   |   ...     |       3      |      7      |
+/// |  ...  |  ...   |   ...     |       4      |      8      |
+/// |  ...  |  ...   |   ...     |      ...     |     ...     |
+/// 
 /// We use a K-bit lookup table, that is tagged 1..=K, where the tag `i` marks an `i`-bit value.
 ///
 use halo2_proofs::{circuit::*, pasta::group::ff::PrimeField, plonk::*, poly::Rotation};
@@ -137,8 +145,8 @@ mod tests {
     }
 
     #[test]
-    fn lookup_2() {
-        let k = 4;
+    fn test_multi_cols_rangecheck_lookup() {
+        let k = 5;
         let circuit = circuit();
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
@@ -146,14 +154,14 @@ mod tests {
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_lookup2_circuit() {
+    fn plot_multi_cols_rangecheck_lookup() {
         // Instantiate the circuit with the private inputs.
         let k = 4;
         let circuit = circuit();
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./circuit_layouter_plots/lookup2.png", (1024, 768))
+        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_multi_cols_rangecheck_lookup.png", (1024, 768))
             .into_drawing_area();
         root.fill(&WHITE).unwrap();
         let root = root.titled("Lookup2 Circuit", ("sans-serif", 60)).unwrap();

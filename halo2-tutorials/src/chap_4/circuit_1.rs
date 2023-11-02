@@ -8,6 +8,19 @@ use halo2_proofs::{
     poly::Rotation,
 };
 
+/// Circuit design:
+/// | advice_a| advice_b| q_lookup| table_1 | table_2 |
+/// |---------|---------|---------|---------|---------|
+/// |    0    |    0    |    1    |    0    |    0    |
+/// |    1    |    0    |    1    |    1    |    1    |
+/// |    2    |    1    |    1    |    2    |    2    |
+/// |    3    |    2    |    1    |    3    |    3    |
+/// |         |    3    |    0    |    4    |    4    |
+/// |         |         |   ...   |   ...   |   ...   |
+/// |         |         |    0    |  RANGE  |  RANGE  |
+/// - cur_a ∈ t1
+/// - next_b ∈ t2
+
 #[derive(Clone)]
 struct LookupConfig {
     a: Column<Advice>,
@@ -44,7 +57,7 @@ impl<F: PrimeField> LookupChip<F> {
             let cur_a = meta.query_advice(a, Rotation::cur());
             let next_b = meta.query_advice(b, Rotation::next());
             let s = meta.query_selector(s);
-            // we'll assgin (0,0) in t1,t2 table
+            // we'll assgin (0, 0) in t1, t2 table
             // so the default condition for other rows without need to lookup will also satisfy this constriant
             vec![(s.clone() * cur_a, t1), (s * next_b, t2)]
         });
@@ -132,13 +145,47 @@ mod tests {
     #[test]
     fn test_lookup_on_different_rows() {
         let k = 5;
-        let a = [0, 1, 2, 3];
-        let b = [0, 0, 1, 2, 3];
+        let a = [0, 1, 2, 3, 4];
+        let b = [0, 0, 1, 2, 3, 4];
         let a = a.map(|v| Value::known(Fp::from(v))).to_vec();
         let b = b.map(|v| Value::known(Fp::from(v))).to_vec();
 
         let circuit = MyCircuit { a, b };
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
+    }
+
+    #[cfg(feature = "dev-graph")]
+    #[test]
+    fn plot_lookup_on_different_rows() {
+        let k = 5;
+        let a = [0, 1, 2, 3, 4];
+        let b = [0, 0, 1, 2, 3, 4];
+        let a = a.map(|v| Value::known(Fp::from(v))).to_vec();
+        let b = b.map(|v| Value::known(Fp::from(v))).to_vec();
+        let circuit = MyCircuit { a, b };
+
+        // Create the area you want to draw on.
+        // Use SVGBackend if you want to render to .svg instead.
+        use plotters::prelude::*;
+        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_lookup_on_different_rows.png", (1024, 768))
+            .into_drawing_area();
+        root.fill(&WHITE).unwrap();
+        let root = root
+            .titled("Simple Lookup Circuit", ("sans-serif", 60))
+            .unwrap();
+
+        halo2_proofs::dev::CircuitLayout::default()
+            // You can optionally render only a section of the circuit.
+            // .view_width(0..2)
+            // .view_height(0..16)
+            // You can hide labels, which can be useful with smaller areas.
+            .show_labels(true)
+            .mark_equality_cells(true)
+            .show_equality_constraints(true)
+            // Render the circuit onto your area!
+            // The first argument is the size parameter for the circuit.
+            .render(5, &circuit, &root)
+            .unwrap();
     }
 }
