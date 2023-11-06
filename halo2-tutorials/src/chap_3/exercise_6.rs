@@ -51,19 +51,20 @@ impl<F: Field> FiboChip<F> {
         }
 
         meta.create_gate("fibo gate", |meta| {
-            let s = meta.query_selector(selector);
-            let cur_left = meta.query_advice(advice[0], Rotation::cur());
-            let cur_right = meta.query_advice(advice[1], Rotation::cur());
-            let next_left = meta.query_advice(advice[0], Rotation::next());
-            let next_right = meta.query_advice(advice[1], Rotation::next());
+            let s = meta.____;
+            let cur_left = ____;
+            let cur_right = ____;
+            let next_left = ____;
+            let next_right = ____;
             Constraints::with_selector(
                 s,
                 vec![
-                    (cur_left + cur_right.clone() - next_left.clone()),
-                    (cur_right + next_left - next_right),
+                    ___,
+                    ___,
                 ],
             )
         });
+
         FiboChipConfig {
             advice,
             selector,
@@ -157,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fibo2() {
+    fn test_chap_3_exercise_6() {
         let f0 = Fp::from(1);
         let f1 = Fp::from(1);
         let n = 11;
@@ -175,7 +176,7 @@ mod tests {
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_fibo2_circuit() {
+    fn plot_chap_3_exercise_6() {
         // Instantiate the circuit with the private inputs.
         let circuit = FiboCircuit::<Fp> {
             nrow: 20,

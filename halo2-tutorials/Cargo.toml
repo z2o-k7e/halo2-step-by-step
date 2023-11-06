@@ -12,6 +12,7 @@ chap_1_exercise_2 = []
 chap_1_exercise_3 = []
 chap_2_exercise_4 = []
 chap_2_exercise_5 = []
+chap_3_exercise_6 = []
 
 [dependencies]
 halo2_proofs = { git = "https://github.com/zcash/halo2.git", version = "0.3"}

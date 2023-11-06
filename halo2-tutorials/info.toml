@@ -108,7 +108,7 @@ mode = "test"
 hint = """
 ----------------- hint ! ---------------------------------
 Halo2 Exercise 5 :
-* ref link: https://learn.z2o-k7e.world/halo2/chap-2/index.html
+* ref link: https://learn.z2o-k7e.world/halo2/chap-3/index.html
 * Error file: src/chap_2/exercise_5.rs
 
 in exercise 4, our circuit design like:
@@ -139,3 +139,31 @@ But I'm confident you've got this! 💪🔧
 ----------------------------------------------------------
 """
 
+
+[[exercises]]
+name = "Fibonacci-1"
+test_mod = "chap_3::exercise_6::tests::test_chap_3_exercise_6"
+path = "src/chap_3/exercise_6.rs"
+feature = "chap_3_exercise_6"
+mode = "test"
+hint = """
+----------------- hint ! ---------------------------------
+Halo2 Exercise 5 :
+* ref link: https://learn.z2o-k7e.world/halo2/chap-4/index.html
+* Error file: src/chap_3/exercise_6.rs
+
+line-53         meta.create_gate("fibo gate", |meta| {
+                    let s = meta.____;
+                    let cur_left = ____;
+                    let cur_right = ____;
+                    let next_left = ____;
+                    let next_right = ____;
+                    Constraints::with_selector(
+                        s,
+                        vec![
+                            ___,
+                            ___,
+                        ],
+                    )
+                });
+"""

@@ -120,7 +120,9 @@ cargo test --features chap_2_exercise_4,dev-graph -- --nocapture plot_chap_2_exe
 #### exercise_5
 
 
-参考链接: https://learn.z2o-k7e.world/halo2/chap-2/index.html
+参考链接: 
+- https://learn.z2o-k7e.world/halo2/chap-2/index.html
+- https://learn.z2o-k7e.world/halo2/chap-3/index.html
 
 参考答案:
 ```rust
@@ -190,4 +192,23 @@ Test & plot it.
 ```bash
 cargo test --features chap_2_exercise_5 -- --nocapture test_chap_2_exercise_5
 cargo test --features chap_2_exercise_5,dev-graph -- --nocapture plot_chap_2_exercise_5
+```
+
+
+#### exercise_6
+
+
+参考链接: https://learn.z2o-k7e.world/halo2/chap-4/index.html
+
+参考答案:
+
+```rust
+  // let s = meta.query_selector(selector);
+  // let cur_left = meta.query_advice(advice[0], Rotation::cur());
+  // let cur_right = meta.query_advice(advice[1], Rotation::cur());
+  // let next_left = meta.query_advice(advice[0], Rotation::next());
+  // let next_right = meta.query_advice(advice[1], Rotation::next());
+
+              // (cur_left + cur_right.clone() - next_left.clone()),
+              // (cur_right + next_left - next_right),
 ```
