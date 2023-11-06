@@ -1,102 +1,126 @@
-/// This helper uses a lookup table to check that the value witnessed in a given cell is
-/// within a given range.
-///
-/// The lookup table is tagged by `num_bits` to give a strict range check.
-///
-/// ------------------
-/// | private inputs |
-/// ------------------
-/// | value |  bit   | q_lookup  | table_n_bits | table_value |
-/// -----------------------------------------------------------
-/// |  v_0  |   0    |    0      |       1      |      0      |
-/// |  v_1  |   1    |    1      |       1      |      1      |
-/// |  ...  |  ...   |   1       |       2      |      2      |
-/// |  ...  |  ...   |   1       |       2      |      3      |
-/// |  ...  |  ...   |   1       |       3      |      4      |
-/// |  ...  |  ...   |   1       |       3      |      5      |
-/// |  ...  |  ...   |   1       |       3      |      6      |
-/// |  ...  |  ...   |   ...     |       3      |      7      |
-/// |  ...  |  ...   |   ...     |       4      |      8      |
-/// |  ...  |  ...   |   ...     |      ...     |     ...     |
-/// 
-/// We use a K-bit lookup table, that is tagged 1..=K, where the tag `i` marks an `i`-bit value.
-///
-use halo2_proofs::{circuit::*, pasta::group::ff::PrimeField, plonk::*, poly::Rotation};
+/// A circuit to demonstrate we can do lookup on different rows in different columns
+use std::marker::PhantomData;
 
-use super::table_3::*;
+use halo2_proofs::{
+    circuit::{Layouter, SimpleFloorPlanner, Value},
+    pasta::group::ff::PrimeField,
+    plonk::*,
+    poly::Rotation,
+};
 
-#[derive(Debug, Clone)]
-struct RangeCheckConfig<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> {
-    value: Column<Advice>,
-    bit: Column<Advice>,
-    q_lookup: Selector,
-    table: RangeCheckTable<F, NUM_BITS, RANGE>,
+/// Circuit design:
+/// | advice_a| advice_b| q_lookup| table_1 | table_2 |
+/// |---------|---------|---------|---------|---------|
+/// |    0    |    0    |    1    |    0    |    0    |
+/// |    1    |    0    |    1    |    1    |    1    |
+/// |    2    |    1    |    1    |    2    |    2    |
+/// |    3    |    2    |    1    |    3    |    3    |
+/// |         |    3    |    0    |    4    |    4    |
+/// |         |         |   ...   |   ...   |   ...   |
+/// |         |         |    0    |  RANGE  |  RANGE  |
+/// - cur_a ∈ t1
+/// - next_b ∈ t2
+
+#[derive(Clone)]
+struct LookupConfig {
+    a: Column<Advice>,
+    b: Column<Advice>,
+    s: Selector,
+    t1: TableColumn,
+    t2: TableColumn,
 }
 
-impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize>
-    RangeCheckConfig<F, NUM_BITS, RANGE>
-{
-    fn configure(meta: &mut ConstraintSystem<F>) -> Self {
-        //when to configure the colum, during config or circuit instance: configure time
-        let value = meta.advice_column();
-        let bit = meta.advice_column();
-        let q_lookup = meta.complex_selector();
-        let table = RangeCheckTable::configure(meta);
+struct LookupChip<F: PrimeField> {
+    config: LookupConfig,
+    _marker: PhantomData<F>,
+}
+
+impl<F: PrimeField> LookupChip<F> {
+    fn construct(config: LookupConfig) -> Self {
+        LookupChip {
+            config,
+            _marker: PhantomData,
+        }
+    }
+
+    fn configure(meta: &mut ConstraintSystem<F>) -> LookupConfig {
+        let a = meta.advice_column();
+        let b = meta.advice_column();
+        let s = meta.complex_selector();
+        let t1 = meta.lookup_table_column();
+        let t2 = meta.lookup_table_column();
+
+        meta.enable_equality(a);
+        meta.enable_equality(b);
 
         meta.lookup(|meta| {
-            let default_value = Expression::Constant(F::ZERO);
-            let default_bit = Expression::Constant(F::ONE);
-            let mut v = meta.query_advice(value, Rotation::cur());
-            let mut b = meta.query_advice(bit, Rotation::cur());
-            let q = meta.query_selector(q_lookup);
-            let non_q = Expression::Constant(F::ONE) - q.clone();
-            v = v * q.clone() + non_q.clone() * default_value;
-            b = b * q + non_q * default_bit;
-            vec![(b, table.n_bits), (v, table.value)]
+            let cur_a = meta.query_advice(a, Rotation::cur());
+            let next_b = meta.query_advice(b, Rotation::next());
+            let s = meta.query_selector(s);
+            // we'll assgin (0, 0) in t1, t2 table
+            // so the default condition for other rows without need to lookup will also satisfy this constriant
+            vec![(s.clone() * cur_a, t1), (s * next_b, t2)]
         });
 
-        RangeCheckConfig {
-            value,
-            bit,
-            q_lookup,
-            table,
-        }
+        LookupConfig { a, b, s, t1, t2 }
     }
 
     fn assign(
         &self,
         mut layouter: impl Layouter<F>,
-        bits: Vec<Value<F>>,
-        values: &Vec<Value<Assigned<F>>>,
+        a_arr: &Vec<Value<F>>,
+        b_arr: &Vec<Value<F>>,
     ) -> Result<(), Error> {
         layouter.assign_region(
-            || "bit&value region",
+            || "a,b",
             |mut region| {
-                for i in 0..bits.len() {
-                    self.q_lookup.enable(&mut region, i)?;
-                    region.assign_advice(|| "bit", self.bit, i, || bits[i])?;
-                    region.assign_advice(|| "value", self.value, i, || values[i])?;
+                for i in 0..a_arr.len() {
+                    self.config.s.enable(&mut region, i)?;
+                    region.assign_advice(|| "a col", self.config.a, i, || a_arr[i])?;
                 }
+
+                for i in 0..b_arr.len() {
+                    region.assign_advice(|| "b col", self.config.b, i, || b_arr[i])?;
+                }
+
                 Ok(())
             },
-        )
-    }
+        )?;
 
-    fn assign_table(&self, layouter: impl Layouter<F>) -> Result<(), Error> {
-        self.table.load(layouter)
+        layouter.assign_table(
+            || "t1,t2",
+            |mut table| {
+                for i in 0..10 {
+                    table.assign_cell(
+                        || "t1",
+                        self.config.t1,
+                        i,
+                        || Value::known(F::from(i as u64)),
+                    )?;
+                    table.assign_cell(
+                        || "t2",
+                        self.config.t2,
+                        i,
+                        || Value::known(F::from(i as u64)),
+                    )?;
+                }
+
+                Ok(())
+            },
+        )?;
+
+        Ok(())
     }
 }
 
-#[derive(Debug, Default)]
-struct MyCircuit<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> {
-    num_bits: Vec<u8>,
-    values: Vec<Value<Assigned<F>>>,
+#[derive(Default)]
+struct MyCircuit<F: PrimeField> {
+    a: Vec<Value<F>>,
+    b: Vec<Value<F>>,
 }
 
-impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> Circuit<F>
-    for MyCircuit<F, NUM_BITS, RANGE>
-{
-    type Config = RangeCheckConfig<F, NUM_BITS, RANGE>;
+impl<F: PrimeField> Circuit<F> for MyCircuit<F> {
+    type Config = LookupConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -104,22 +128,12 @@ impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> Circuit<F>
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        RangeCheckConfig::configure(meta)
+        LookupChip::configure(meta)
     }
 
-    fn synthesize(
-        &self,
-        config: Self::Config,
-        mut layouter: impl Layouter<F>,
-    ) -> Result<(), Error> {
-        config.assign_table(layouter.namespace(|| "table"))?;
-        let bits = self
-            .num_bits
-            .iter()
-            .map(|v| Value::known(F::from(*v as u64)))
-            .collect();
-        config.assign(layouter.namespace(|| "value"), bits, &self.values)?;
-        Ok(())
+    fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
+        let chip = LookupChip::<F>::construct(config);
+        chip.assign(layouter, &self.a, &self.b)
     }
 }
 
@@ -128,43 +142,39 @@ mod tests {
     use halo2_proofs::{dev::MockProver, pasta::Fp};
 
     use super::*;
-
-    fn circuit() -> MyCircuit<Fp, 4, 15> {
-        const NUM_BITS: usize = 4;
-        let mut num_bits: Vec<u8> = vec![];
-        let mut values: Vec<Value<Assigned<Fp>>> = vec![];
-        for num_bit in 1u8..=NUM_BITS.try_into().unwrap() {
-            for value in 1 << (num_bit - 1)..1 << num_bit {
-                println!("value:{:?}, {:?}", num_bit, value);
-                values.push(Value::known(Fp::from(value)).into());
-                num_bits.push(num_bit);
-            }
-        }
-
-        MyCircuit::<Fp, NUM_BITS, 15> { num_bits, values }
-    }
-
     #[test]
-    fn test_multi_cols_rangecheck_lookup() {
+    fn test_lookup_on_different_rows() {
         let k = 5;
-        let circuit = circuit();
+        let a = [0, 1, 2, 3, 4];
+        let b = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        println!("a: {:?} ", a);
+        println!("b: {:?} ", b);
+        let a = a.map(|v| Value::known(Fp::from(v))).to_vec();
+        let b = b.map(|v| Value::known(Fp::from(v))).to_vec();
+        let circuit = MyCircuit { a, b };
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
     }
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_multi_cols_rangecheck_lookup() {
-        // Instantiate the circuit with the private inputs.
-        let k = 4;
-        let circuit = circuit();
+    fn plot_lookup_on_different_rows() {
+        let k = 5;
+        let a = [0, 1, 2, 3, 4];
+        let b = [0, 0, 1, 2, 3, 4];
+        let a = a.map(|v| Value::known(Fp::from(v))).to_vec();
+        let b = b.map(|v| Value::known(Fp::from(v))).to_vec();
+        let circuit = MyCircuit { a, b };
+
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_multi_cols_rangecheck_lookup.png", (1024, 768))
+        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_lookup_on_different_rows.png", (1024, 768))
             .into_drawing_area();
         root.fill(&WHITE).unwrap();
-        let root = root.titled("Lookup2 Circuit", ("sans-serif", 60)).unwrap();
+        let root = root
+            .titled("Simple Lookup Circuit", ("sans-serif", 60))
+            .unwrap();
 
         halo2_proofs::dev::CircuitLayout::default()
             // You can optionally render only a section of the circuit.
@@ -172,6 +182,8 @@ mod tests {
             // .view_height(0..16)
             // You can hide labels, which can be useful with smaller areas.
             .show_labels(true)
+            .mark_equality_cells(true)
+            .show_equality_constraints(true)
             // Render the circuit onto your area!
             // The first argument is the size parameter for the circuit.
             .render(5, &circuit, &root)

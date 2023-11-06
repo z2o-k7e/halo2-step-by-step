@@ -1,93 +1,102 @@
-// Problem to prove:  a in [0, RANGE]
-use halo2_proofs::{
-    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
-    pasta::group::ff::PrimeField,
-    plonk::*,
-    poly::Rotation,
-};
+/// This helper uses a lookup table to check that the value witnessed in a given cell is
+/// within a given range.
+///
+/// The lookup table is tagged by `num_bits` to give a strict range check.
+///
+/// ------------------
+/// | private inputs |
+/// ------------------
+/// | value |  bit   | q_lookup  | table_n_bits | table_value |
+/// -----------------------------------------------------------
+/// |  v_0  |   0    |    0      |       1      |      0      |
+/// |  v_1  |   1    |    1      |       1      |      1      |
+/// |  ...  |  ...   |   1       |       2      |      2      |
+/// |  ...  |  ...   |   1       |       2      |      3      |
+/// |  ...  |  ...   |   1       |       3      |      4      |
+/// |  ...  |  ...   |   1       |       3      |      5      |
+/// |  ...  |  ...   |   1       |       3      |      6      |
+/// |  ...  |  ...   |   ...     |       3      |      7      |
+/// |  ...  |  ...   |   ...     |       4      |      8      |
+/// |  ...  |  ...   |   ...     |      ...     |     ...     |
+/// 
+/// We use a K-bit lookup table, that is tagged 1..=K, where the tag `i` marks an `i`-bit value.
+///
+use halo2_proofs::{circuit::*, pasta::group::ff::PrimeField, plonk::*, poly::Rotation};
 
-use super::table_2::*;
+use super::table_3::*;
 
-/// Circuit design:
-/// | adv   | q_lookup|  table  |
-/// |-------|---------|---------|
-/// | a[0]  |    1    |    0    |
-/// | a[1]  |    1    |    1    |
-/// |  ...  |   ...   |   ...   |
-/// | a[N]  |    1    |   N-1   |
-/// |       |    0    |    N    |
-/// |       |   ...   |   ...   |
-/// |       |    0    |  RANGE  |
-
-struct ACell<F: PrimeField>(AssignedCell<Assigned<F>, F>);
 #[derive(Debug, Clone)]
-struct RangeConfig<F: PrimeField, const RANGE: usize, const NUM: usize> {
+struct RangeCheckConfig<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> {
     value: Column<Advice>,
-    table: LookUpTable<F, RANGE>,
+    bit: Column<Advice>,
     q_lookup: Selector,
+    table: RangeCheckTable<F, NUM_BITS, RANGE>,
 }
 
-impl<F: PrimeField, const RANGE: usize, const NUM: usize> RangeConfig<F, RANGE, NUM> {
-    fn configure(meta: &mut ConstraintSystem<F>, value: Column<Advice>) -> Self {
+impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize>
+    RangeCheckConfig<F, NUM_BITS, RANGE>
+{
+    fn configure(meta: &mut ConstraintSystem<F>) -> Self {
+        //when to configure the colum, during config or circuit instance: configure time
+        let value = meta.advice_column();
+        let bit = meta.advice_column();
         let q_lookup = meta.complex_selector();
-        let table = LookUpTable::<F, RANGE>::configure(meta);
+        let table = RangeCheckTable::configure(meta);
+
         meta.lookup(|meta| {
-            let q_lookup = meta.query_selector(q_lookup);
-            let v = meta.query_advice(value, Rotation::cur());
-            vec![(q_lookup * v, table.table)]
+            let default_value = Expression::Constant(F::ZERO);
+            let default_bit = Expression::Constant(F::ONE);
+            let mut v = meta.query_advice(value, Rotation::cur());
+            let mut b = meta.query_advice(bit, Rotation::cur());
+            let q = meta.query_selector(q_lookup);
+            let non_q = Expression::Constant(F::ONE) - q.clone();
+            v = v * q.clone() + non_q.clone() * default_value;
+            b = b * q + non_q * default_bit;
+            vec![(b, table.n_bits), (v, table.value)]
         });
 
-        RangeConfig {
+        RangeCheckConfig {
             value,
-            table,
+            bit,
             q_lookup,
+            table,
         }
     }
 
     fn assign(
         &self,
         mut layouter: impl Layouter<F>,
-        value: [Value<Assigned<F>>; NUM],
-    ) -> Result<ACell<F>, Error> {
+        bits: Vec<Value<F>>,
+        values: &Vec<Value<Assigned<F>>>,
+    ) -> Result<(), Error> {
         layouter.assign_region(
-            || "value to check",
+            || "bit&value region",
             |mut region| {
-                //instantiate a new region, so it's not ref
-                self.q_lookup.enable(&mut region, 0)?;
-                let mut cell = region
-                    .assign_advice(|| "value", self.value, 0, || value[0])
-                    .map(ACell);
-                for i in 1..value.len() {
+                for i in 0..bits.len() {
                     self.q_lookup.enable(&mut region, i)?;
-                    cell = region
-                        .assign_advice(|| "value", self.value, i, || value[i])
-                        .map(ACell);
+                    region.assign_advice(|| "bit", self.bit, i, || bits[i])?;
+                    region.assign_advice(|| "value", self.value, i, || values[i])?;
                 }
-                cell
+                Ok(())
             },
         )
     }
-}
 
-#[derive(Debug)]
-struct MyCircuit<F: PrimeField, const RANGE: usize, const NUM: usize> {
-    value: [Value<Assigned<F>>; NUM],
-}
-
-impl<F: PrimeField, const RANGE: usize, const NUM: usize> MyCircuit<F, RANGE, NUM> {
-    fn default() -> Self {
-        let mut values = vec![];
-        for i in 0..NUM {
-            values.push(Value::known(Assigned::from(F::from(i as u64))));
-        }
-
-        let values = values.try_into().unwrap();
-        MyCircuit::<F, RANGE, NUM> { value: values }
+    fn assign_table(&self, layouter: impl Layouter<F>) -> Result<(), Error> {
+        self.table.load(layouter)
     }
 }
 
-impl<F: PrimeField, const RANGE: usize, const NUM: usize> Circuit<F> for MyCircuit<F, RANGE, NUM> {
-    type Config = RangeConfig<F, RANGE, NUM>;
+#[derive(Debug, Default)]
+struct MyCircuit<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> {
+    num_bits: Vec<u8>,
+    values: Vec<Value<Assigned<F>>>,
+}
+
+impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> Circuit<F>
+    for MyCircuit<F, NUM_BITS, RANGE>
+{
+    type Config = RangeCheckConfig<F, NUM_BITS, RANGE>;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -95,8 +104,7 @@ impl<F: PrimeField, const RANGE: usize, const NUM: usize> Circuit<F> for MyCircu
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let advice = meta.advice_column();
-        RangeConfig::configure(meta, advice)
+        RangeCheckConfig::configure(meta)
     }
 
     fn synthesize(
@@ -104,10 +112,13 @@ impl<F: PrimeField, const RANGE: usize, const NUM: usize> Circuit<F> for MyCircu
         config: Self::Config,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        config
-            .table
-            .load(&mut layouter.namespace(|| "lookup col"))?;
-        config.assign(layouter.namespace(|| "range check"), self.value)?;
+        config.assign_table(layouter.namespace(|| "table"))?;
+        let bits = self
+            .num_bits
+            .iter()
+            .map(|v| Value::known(F::from(*v as u64)))
+            .collect();
+        config.assign(layouter.namespace(|| "value"), bits, &self.values)?;
         Ok(())
     }
 }
@@ -118,44 +129,42 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_1_col_rangecheck_lookup() {
-        const NUM: usize = 3;
-        let mut values = vec![];
-        for i in 0..NUM {
-            values.push(Value::known(Assigned::from(Fp::from(i as u64))));
+    fn circuit() -> MyCircuit<Fp, 4, 15> {
+        const NUM_BITS: usize = 4;
+        let mut num_bits: Vec<u8> = vec![];
+        let mut values: Vec<Value<Assigned<Fp>>> = vec![];
+        for num_bit in 1u8..=NUM_BITS.try_into().unwrap() {
+            for value in 1 << (num_bit - 1)..1 << num_bit {
+                println!("value:{:?}, {:?}", num_bit, value);
+                values.push(Value::known(Fp::from(value)).into());
+                num_bits.push(num_bit);
+            }
         }
 
-        let circuit = MyCircuit::<Fp, 16, NUM> {
-            value: values.clone().try_into().unwrap(),
-        };
-        let k = 5;
+        MyCircuit::<Fp, NUM_BITS, 15> { num_bits, values }
+    }
 
+    #[test]
+    fn test_multi_cols_rangecheck_lookup() {
+        let k = 5;
+        let circuit = circuit();
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
-
-        values[1] = Value::known(Assigned::from(Fp::from(18 as u64)));
-        let circuit = MyCircuit::<Fp, 16, NUM> {
-            value: values.clone().try_into().unwrap(),
-        };
-        let prover = MockProver::run(k, &circuit, vec![]).unwrap();
-        assert!(prover.verify().is_err());
     }
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_1_col_rangecheck_lookup() {
+    fn plot_multi_cols_rangecheck_lookup() {
         // Instantiate the circuit with the private inputs.
-        let circuit = MyCircuit::<Fp, 16, 5>::default();
+        let k = 4;
+        let circuit = circuit();
         // Create the area you want to draw on.
         // Use SVGBackend if you want to render to .svg instead.
         use plotters::prelude::*;
-        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_1_col_rangecheck_lookup.png", (1024, 768))
+        let root = BitMapBackend::new("./circuit_layouter_plots/chap_4_multi_cols_rangecheck_lookup.png", (1024, 768))
             .into_drawing_area();
         root.fill(&WHITE).unwrap();
-        let root = root
-            .titled("1_col_rangecheck_lookup", ("sans-serif", 60))
-            .unwrap();
+        let root = root.titled("Lookup2 Circuit", ("sans-serif", 60)).unwrap();
 
         halo2_proofs::dev::CircuitLayout::default()
             // You can optionally render only a section of the circuit.
@@ -163,8 +172,6 @@ mod tests {
             // .view_height(0..16)
             // You can hide labels, which can be useful with smaller areas.
             .show_labels(true)
-            .mark_equality_cells(true)
-            .show_equality_constraints(true)
             // Render the circuit onto your area!
             // The first argument is the size parameter for the circuit.
             .render(5, &circuit, &root)
