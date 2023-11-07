@@ -55,6 +55,10 @@ impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> RangeTableConfig<
                 }
 
                 // 这个范围用于确保在给定的 `num_bits` 下，他所能表示的数字的值在预期的最小和最大之间
+                // when (lookup) NUM_BITS = 3 ; RANGE = 8 时:
+                // - num_bits: [1,2,2,3,3,3,3]
+                // - value   : [1,2,3,4,5,6,7]
+                // 可以看到这个查找表是蛮小的..
                 for num_bits in 1..=NUM_BITS {
                     for value in (1 << (num_bits - 1))..(1 << num_bits) {
                         table.assign_cell(
@@ -70,7 +74,7 @@ impl<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> RangeTableConfig<
                             || Value::known(F::from(value as u64)),
                         )?;
                         offset += 1;
-                        // println!("{:?}    {:?}",num_bits ,value);
+                        println!("{:?}    {:?}",num_bits ,value);
                     }
                 }
 

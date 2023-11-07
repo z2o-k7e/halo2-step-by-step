@@ -7,7 +7,7 @@ edition = "2021"
 
 [lib]
 name = "halo2_examples"
-path = "src/lib.rs"
+path = "src/mod.rs"
 
 [features]
 dev-graph = ["halo2_proofs/dev-graph", "plotters"]

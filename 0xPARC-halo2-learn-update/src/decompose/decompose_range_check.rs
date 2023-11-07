@@ -2,8 +2,7 @@ use ff::{PrimeField, PrimeFieldBits};
 use halo2_proofs::{circuit::*, plonk::*, poly::Rotation};
 use std::marker::PhantomData;
 
-mod table;
-use table::RangeTableConfig;
+use super::table::*;
 
 
 #[derive(Debug, Clone)]
@@ -117,7 +116,7 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
         let partial_len = num_bits % LOOKUP_NUM_BITS; // 8 % 3 = 2
 
         layouter.assign_region(
-            || "Decompose value",
+            || "Decompose value.",
             |mut region| {
                 let mut offset = 0;
 
@@ -307,22 +306,26 @@ fn compute_running_sum<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: us
     running_sum
 }
 
+
+
 #[cfg(test)]
 mod tests {
     use halo2_proofs::{circuit::floor_planner::V1, dev::MockProver, pasta::Fp};
-    use rand;
-
     use super::*;
+    // use rand;
 
-    struct MyCircuit<F: PrimeField, const NUM_BITS: usize, const RANGE: usize> {
+    const LOOKUP_NUM_BITS: usize = 3; // LOOKUP_NUM_BITS
+    const LOOKUP_RANGE: usize = 8; // 10-bit value // LOOKUP_RANGE
+
+    struct MyCircuit<F: PrimeField, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> {
         value: Value<Assigned<F>>,
         num_bits: usize,
     }
 
-    impl<F: PrimeField + PrimeFieldBits, const NUM_BITS: usize, const RANGE: usize> Circuit<F>
-        for MyCircuit<F, NUM_BITS, RANGE>
+    impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> Circuit<F>
+        for MyCircuit<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
     {   // DecomposeConfig<F, 10, 1024>
-        type Config = DecomposeConfig<F, NUM_BITS, RANGE>; // <F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
+        type Config = DecomposeConfig<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>; // <F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
         type FloorPlanner = V1;
 
         fn without_witnesses(&self) -> Self {
@@ -359,7 +362,7 @@ mod tests {
             // println!("synthesize value : {:?}", value.value()); // 0x9a.
 
             config.assign(
-                layouter.namespace(|| "Decompose value"),
+                layouter.namespace(|| "synthesize decompose value"),
                 value,    // value 0x9a.
                 self.num_bits, // 8, the len of binary form of the num `154`.
             )?;
@@ -368,24 +371,18 @@ mod tests {
         }
     }
 
+    fn circuit(value: u64,  num_bits: usize) -> MyCircuit<Fp, LOOKUP_NUM_BITS, LOOKUP_RANGE> {
+        let value = Value::known(Assigned::from(Fp::from(value)));
+        MyCircuit::<Fp, LOOKUP_NUM_BITS, LOOKUP_RANGE> { value, num_bits }
+    }
+
+
     #[test]
     fn test_decompose_3() {
-        // 本例中, K (NUM_BITS) 为 10 (即分解为大小为 10 的块, 查找表的大小为 2^10 )
-        let k = 11;
-        // i.e. `K` in fomula, const NUM_BITS: usize = 10;
-        // const RANGE: usize = 1024; // 10-bit value
-        const NUM_BITS: usize = 3; // LOOKUP_NUM_BITS
-        const RANGE: usize = 8; // 10-bit value // LOOKUP_RANGE
-
-        // Random u64 value
-        // let value: u64 = rand::random();
-        let value = 154; // hex is `9A`
-        let value = Value::known(Assigned::from(Fp::from(value)));
-        // println!("test value  {:?}", value); // 9a
-        let circuit = MyCircuit::<Fp, NUM_BITS, RANGE> {
-            value,
-            num_bits: 8, // `154` : 10011010 是 8 位
-        };
+        let k = 9;
+        let value = 650475031465 ; // 154; // hex is `9A`
+        let num_bits = 40;
+        let circuit = circuit(value, num_bits);
 
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
@@ -416,6 +413,9 @@ mod tests {
     #[test]
     fn print_decompose_3() {
         use plotters::prelude::*;
+        let k = 4;
+        let value = 154; // hex is `9A`
+        let num_bits = 8;
 
         let root = BitMapBackend::new("decompose-layout.png", (1024, 3096)).into_drawing_area();
         root.fill(&WHITE).unwrap();
@@ -423,12 +423,12 @@ mod tests {
             .titled("Decompose Range Check Layout", ("sans-serif", 60))
             .unwrap();
 
-        let circuit = MyCircuit::<Fp, 10, 1024> {
-            value: Value::unknown(),
-            num_bits: 64,
-        };
+        // const LOOKUP_NUM_BITS: usize = 3; // LOOKUP_NUM_BITS
+        // const LOOKUP_RANGE: usize = 8; // 10-bit value // LOOKUP_RANGE
+        
+        let circuit = circuit(value, num_bits);
         halo2_proofs::dev::CircuitLayout::default()
-            .render(11, &circuit, &root)
+            .render(k, &circuit, &root)
             .unwrap();
     }
 }
