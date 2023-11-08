@@ -1,9 +1,13 @@
 use ff::{PrimeField, PrimeFieldBits};
-use halo2_proofs::{circuit::*, plonk::*, poly::Rotation};
+use halo2_proofs::{
+    circuit::*, 
+    plonk::*, 
+    poly::Rotation,
+    circuit::floor_planner::V1,
+};
 use std::marker::PhantomData;
 
 use super::table::*;
-
 
 #[derive(Debug, Clone)]
 struct DecomposeConfig<
@@ -26,6 +30,7 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
     DecomposeConfig<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
 {
     fn configure(meta: &mut ConstraintSystem<F>, running_sum: Column<Advice>) -> Self {
+        println!("DecomposeConfig - configure");
         // Create the needed columns and internal configs.
         let q_decompose = meta.complex_selector();
         let q_partial_check = meta.complex_selector();
@@ -33,10 +38,12 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
 
         meta.enable_equality(running_sum);
 
-        // 
+
         // z_{i+1} = (z_i - c_i) / 2^K i.e.  `c_i = z_i - z_{i+1} * 2^K`.
         // Range-constrain each K-bit chunk  `c_i = z_i - z_{i+1} * 2^K` derived from the running sum.
         meta.lookup(|meta| {
+            println!("    DecomposeConfig - configure - lookup");
+
             let q_decompose = meta.query_selector(q_decompose);
 
             // z_i
@@ -60,8 +67,9 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
         // Handle the final partial chunk.
         // 用于处理二进制数的最后一个部分块 (高位 chunk)
         // Shifted: 当我们到达 final chunk 且它的位数 < LOOKUP_NUM_BITS 时，
-        // 需要 "shift"这个块, 以使其能够与完整的块进行交互或对比
+        // 需要 "shift "这个块, 以使其能够与完整的块进行交互或对比
         meta.create_gate("final partial chunk", |meta| {
+            println!("    DecomposeConfig - configure - create_gate");
             let q_partial_check = meta.query_selector(q_partial_check);
 
             // z_{C-1}
@@ -84,6 +92,7 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
         });
 
         meta.lookup(|meta| {
+            println!("    DecomposeConfig - configure - lookup(q_partial)");
             let q_partial_check = meta.query_selector(q_partial_check);
             let shifted = meta.query_advice(running_sum, Rotation::next());
 
@@ -112,6 +121,8 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
         value: AssignedCell<Assigned<F>, F>,
         num_bits: usize,
     ) -> Result<(), Error> {
+        println!("DecomposeConfig - assign");
+
         // 8 % 3 = 2, 所以最后一个 chunk 只有 2 位， 不足 3 位
         let partial_len = num_bits % LOOKUP_NUM_BITS; // 8 % 3 = 2
 
@@ -127,7 +138,7 @@ impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_
                     self.running_sum,
                     offset,
                 )?;
-                // println!("z: {:?}", z.value());  `9a` , raw num it self, the 1st of running sum.
+                // println!("z: {:?}", z.value());  `9a` , raw num itself, the 1st of running sum.
 
                 // Increase offset after copying `value`
                 offset += 1;
@@ -306,109 +317,114 @@ fn compute_running_sum<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: us
     running_sum
 }
 
+struct MyCircuit<F: PrimeField, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> {
+    value: Value<Assigned<F>>,
+    num_bits: usize,
+}
 
+impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> Circuit<F>
+    for MyCircuit<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
+{   // DecomposeConfig<F, 10, 1024>
+    type Config = DecomposeConfig<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>; // <F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
+    type FloorPlanner = V1;
+
+    fn without_witnesses(&self) -> Self {
+        Self {
+            value: Value::unknown(),
+            num_bits: self.num_bits,
+        }
+    }
+
+    fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
+        println!("MyCircuit - configure");
+
+        // Fixed column for constants
+        // cause `assign_advice_from_constant` need  `1`  Fixed Column.
+        let constants = meta.fixed_column();
+        meta.enable_constant(constants);
+
+        let value = meta.advice_column();
+        DecomposeConfig::configure(meta, value)
+    }
+
+    fn synthesize(
+        &self,
+        config: Self::Config,
+        mut layouter: impl Layouter<F>,
+    ) -> Result<(), Error> {
+        println!("MyCircuit - synthesize");
+        config.table.load(&mut layouter)?;
+
+        // Witness the value somewhere
+        // `self.value`  is  `9a` , is the raw num itself.
+        let value = layouter.assign_region(
+            || "Witness value",
+            |mut region| {
+                region.assign_advice(|| "Witness value", config.running_sum, 0, || self.value)
+            },
+        )?;
+        // println!("synthesize value : {:?}", value.value()); // 0x9a.
+
+        config.assign(
+            layouter.namespace(|| "synthesize decompose value"),
+            value,    // value 0x9a.
+            self.num_bits, // 8, the len of binary form of the num `154`.
+        )?;
+
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use halo2_proofs::{circuit::floor_planner::V1, dev::MockProver, pasta::Fp};
+    use halo2_proofs::{dev::MockProver, pasta::Fp};
     use super::*;
     // use rand;
 
-    const LOOKUP_NUM_BITS: usize = 3; // LOOKUP_NUM_BITS
-    const LOOKUP_RANGE: usize = 8; // 10-bit value // LOOKUP_RANGE
-
-    struct MyCircuit<F: PrimeField, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> {
-        value: Value<Assigned<F>>,
-        num_bits: usize,
-    }
-
-    impl<F: PrimeField + PrimeFieldBits, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> Circuit<F>
-        for MyCircuit<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
-    {   // DecomposeConfig<F, 10, 1024>
-        type Config = DecomposeConfig<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>; // <F, LOOKUP_NUM_BITS, LOOKUP_RANGE>
-        type FloorPlanner = V1;
-
-        fn without_witnesses(&self) -> Self {
-            Self {
-                value: Value::unknown(),
-                num_bits: self.num_bits,
-            }
-        }
-
-        fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            // Fixed column for constants
-            let constants = meta.fixed_column();
-            meta.enable_constant(constants);
-
-            let value = meta.advice_column();
-            DecomposeConfig::configure(meta, value)
-        }
-
-        fn synthesize(
-            &self,
-            config: Self::Config,
-            mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
-            config.table.load(&mut layouter)?;
-
-            // Witness the value somewhere
-            // `self.value`  is  `9a` , is the raw num itself.
-            let value = layouter.assign_region(
-                || "Witness value",
-                |mut region| {
-                    region.assign_advice(|| "Witness value", config.running_sum, 0, || self.value)
-                },
-            )?;
-            // println!("synthesize value : {:?}", value.value()); // 0x9a.
-
-            config.assign(
-                layouter.namespace(|| "synthesize decompose value"),
-                value,    // value 0x9a.
-                self.num_bits, // 8, the len of binary form of the num `154`.
-            )?;
-
-            Ok(())
-        }
-    }
-
-    fn circuit(value: u64,  num_bits: usize) -> MyCircuit<Fp, LOOKUP_NUM_BITS, LOOKUP_RANGE> {
-        let value = Value::known(Assigned::from(Fp::from(value)));
-        MyCircuit::<Fp, LOOKUP_NUM_BITS, LOOKUP_RANGE> { value, num_bits }
-    }
-
-
     #[test]
-    fn test_decompose_3() {
-        let k = 9;
-        let value = 650475031465 ; // 154; // hex is `9A`
-        let num_bits = 40;
-        let circuit = circuit(value, num_bits);
+    fn test_decompose_should_success() {
+        let k = 11;
 
+        const LOOKUP_NUM_BITS: usize = 10;
+        const LOOKUP_RANGE: usize = 1 << LOOKUP_NUM_BITS;  // 1024.
+
+        let value = 12284467440737091617;
+        let value = Value::known(Assigned::from(Fp::from(value)));
+        let num_bits = 64;
+
+        let circuit = MyCircuit::<Fp, LOOKUP_NUM_BITS, LOOKUP_RANGE> {
+            value,
+            num_bits,
+        };
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
     }
 
-    // fn test_decompose_3_should_fail() {
-    //     let k = 11;
-    //     const NUM_BITS: usize = 10;
-    //     const RANGE: usize = 1024; // 10-bit value
+    #[test]
+    fn test_decompose_3_should_fail() {
+        let k = 4;
 
-    //     let value = 18446744073709551617;
-    //     let value = Value::known(Assigned::from(Fp::from(value)));
+        const LOOKUP_NUM_BITS: usize = 2;
+        const LOOKUP_RANGE: usize = 1 << LOOKUP_NUM_BITS;  // 4.
 
-    //     // Out-of-range `value = 8`
-    //     let circuit = MyCircuit::<Fp, NUM_BITS, RANGE> {
-    //         value,
-    //         num_bits: 64,
-    //     };
-    //     let prover = MockProver::run(k, &circuit, vec![]).unwrap();
-    //     match prover.verify() {
-    //         Err(e) => {
-    //             println!("Error successfully achieved!");
-    //         }
-    //         _ => assert_eq!(1, 0),
-    //     }
-    // }
+        let value = 8;
+        let value = Value::known(Assigned::from(Fp::from(value)));
+        let num_bits = 2;
+
+        // Out-of-range `value = 8`
+        let circuit = MyCircuit::<Fp, LOOKUP_NUM_BITS, LOOKUP_RANGE> {
+            value,
+            num_bits
+        };
+        let prover = MockProver::run(k, &circuit, vec![]).unwrap();
+        match prover.verify() {
+            Err(e) => {
+                println!("Error successfully achieved! {:?}", e);
+            }
+            _ => assert_eq!(1, 0),
+        }
+    }
+
     #[cfg(feature = "dev-graph")]
     #[test]
     fn print_decompose_3() {

@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use ff::{Field, PrimeField};
+use ff::PrimeField;
 use halo2_proofs::{
     // arithmetic::FieldExt,
     circuit::{AssignedCell, Layouter, Value},
@@ -16,6 +16,7 @@ use halo2_proofs::{
 #[derive(Debug, Clone)]
 /// A range-constrained value in the circuit produced by the RangeCheckConfig.
 struct RangeConstrained<F: PrimeField, const RANGE: usize>(AssignedCell<Assigned<F>, F>);
+
 
 #[derive(Debug, Clone)]
 struct RangeCheckConfig<F: PrimeField, const RANGE: usize> {

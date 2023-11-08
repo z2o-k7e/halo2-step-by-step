@@ -1,4 +1,4 @@
-use ff::{Field, PrimeField};
+use ff::PrimeField;
 use halo2_proofs::{circuit::*, plonk::*, poly::Rotation};
 
 #[derive(Clone, Debug)]
